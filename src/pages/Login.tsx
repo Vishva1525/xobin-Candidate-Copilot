@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { lovable } from '@/integrations/lovable/index';
 import { supabase } from '@/integrations/supabase/client';
-import { Plane, ArrowRight, Brain, Compass, Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { ArrowRight, Brain, Compass, Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
+import xobinLogo from '@/assets/xobin-logo.png';
 import { motion } from 'framer-motion';
 
 const container = {
@@ -103,16 +104,7 @@ export default function Login() {
       >
         {/* Logo */}
         <motion.div variants={item} className="flex items-center gap-2.5">
-          <motion.div
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary glow-primary-sm"
-            animate={{ rotate: [0, -5, 5, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <Plane className="h-5 w-5 text-primary-foreground" />
-          </motion.div>
-          <span className="text-lg font-semibold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            Xobin
-          </span>
+          <img src={xobinLogo} alt="Xobin" className="h-10 w-auto object-contain" />
         </motion.div>
 
         {/* Hero */}
@@ -176,19 +168,12 @@ export default function Login() {
               transition={{ delay: 0.3 }}
               className="text-center mb-8"
             >
-              <motion.div
-                className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary glow-primary"
-                animate={{ rotate: [0, -3, 3, 0] }}
-                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-              >
-                <Plane className="h-7 w-7 text-primary-foreground" />
-              </motion.div>
+              <img src={xobinLogo} alt="Xobin" className="mx-auto mb-3 h-12 w-auto object-contain" />
               <h2
                 className="text-xl font-bold text-foreground"
                 style={{ fontFamily: "'Space Grotesk', sans-serif" }}
               >
-                Xobin{' '}
-                <span className="text-gradient">CoPilot</span>
+                <span className="text-gradient">Candidate Portal</span>
               </h2>
               <p className="text-xs text-muted-foreground mt-1.5">Sign in to your candidate dashboard</p>
             </motion.div>

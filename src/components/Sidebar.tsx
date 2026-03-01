@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import xobinLogo from '@/assets/xobin-logo.png';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -19,14 +20,9 @@ export function Sidebar() {
   return (
     <aside className="flex w-64 flex-col border-r border-sidebar-border bg-sidebar">
       {/* Brand */}
-      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-sidebar-border">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-          <span className="text-sm font-bold text-primary">X</span>
-        </div>
-        <div>
-          <span className="text-base font-semibold text-foreground tracking-tight">Xobin</span>
-          <p className="text-[10px] text-muted-foreground leading-none">Candidate Portal</p>
-        </div>
+      <div className="flex flex-col items-center gap-1 px-6 py-5 border-b border-sidebar-border">
+        <img src={xobinLogo} alt="Xobin" className="h-10 w-auto object-contain" />
+        <p className="text-[10px] font-medium text-muted-foreground tracking-wide">Candidate Portal</p>
       </div>
 
       {/* Nav */}
