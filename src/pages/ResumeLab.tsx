@@ -3,6 +3,7 @@ import { Layout } from '@/components/Layout';
 import { AIActionButton } from '@/components/AIActionButton';
 import { ResumeHealthCard } from '@/components/ResumeHealthCard';
 import { useLocalStorage } from '@/hooks/use-local-storage';
+import { useApplications } from '@/hooks/use-applications';
 import { mockApplications, sampleResumeText } from '@/lib/mock-data';
 import { callAI } from '@/lib/ai-service';
 import { extractTextFromFile } from '@/lib/resume-parser';
@@ -111,30 +112,40 @@ interface StoredDraft {
 }
 
 export default function ResumeLab() {
+  const { applications: userApps } = useApplications();
+  // Use user's apps if they exist, fall back to mock for demo
+  const availableApps = userApps.length > 0 ? userApps : mockApplications;
+
   const [resumeText, setResumeText] = useLocalStorage<string>('candidateos_resume', '');
   const [resumeSections, setResumeSections] = useLocalStorage<ResumeSections | null>('candidateos_sections', null);
   const [resumeHealth, setResumeHealth] = useLocalStorage<ResumeHealth | null>('candidateos_health', null);
   const [tailoredDraftsByAppId, setTailoredDraftsByAppId] = useLocalStorage<Record<string, StoredDraft>>('candidateos_drafts_by_app', {});
-  const [selectedAppId, setSelectedAppId] = useLocalStorage<string>('candidateos_selected_app', mockApplications[0].id);
+  const [selectedAppId, setSelectedAppId] = useLocalStorage<string>('candidateos_selected_app', availableApps[0]?.id || '');
   const [showPaste, setShowPaste] = useState(false);
   const [copied, setCopied] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [extractionError, setExtractionError] = useState<string | null>(null);
-  // Key to force-reset AIActionButton when role changes
   const [actionKey, setActionKey] = useState(0);
 
   const selectedApp = useMemo(
-    () => mockApplications.find(a => a.id === selectedAppId) || mockApplications[0],
-    [selectedAppId]
+    () => availableApps.find(a => a.id === selectedAppId) || availableApps[0],
+    [selectedAppId, availableApps]
   );
 
-  const currentDraftEntry = tailoredDraftsByAppId[selectedAppId] || null;
+  const currentDraftEntry = tailoredDraftsByAppId[selectedApp?.id] || null;
   const tailoredDraft = currentDraftEntry?.draft || null;
+
+  // Sync selectedAppId if current selection is invalid
+  useEffect(() => {
+    if (availableApps.length > 0 && !availableApps.find(a => a.id === selectedAppId)) {
+      setSelectedAppId(availableApps[0].id);
+    }
+  }, [availableApps, selectedAppId, setSelectedAppId]);
 
   // When role changes, reset action button state and show toast
   const handleAppChange = useCallback((newAppId: string) => {
     if (newAppId === selectedAppId) return;
-    const app = mockApplications.find(a => a.id === newAppId);
+    const app = availableApps.find(a => a.id === newAppId);
     setSelectedAppId(newAppId);
     setActionKey(prev => prev + 1); // reset AIActionButton
     if (app) {
@@ -456,7 +467,7 @@ export default function ResumeLab() {
                   onChange={(e) => handleAppChange(e.target.value)}
                   className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
                 >
-                  {mockApplications.map(app => (
+                  {availableApps.map(app => (
                     <option key={app.id} value={app.id}>{app.role} — {app.company}</option>
                   ))}
                 </select>
@@ -482,7 +493,7 @@ export default function ResumeLab() {
                 onClick={async () => {
                   // Capture current values at click time
                   const appId = selectedAppId;
-                  const app = mockApplications.find(a => a.id === appId);
+                  const app = availableApps.find(a => a.id === appId);
                   if (!app) throw new Error('No application selected');
 
                   const result = await callAI('tailor_resume_to_jd', {
