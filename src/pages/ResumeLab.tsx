@@ -14,10 +14,17 @@ import { cn } from '@/lib/utils';
 
 function parseResumeSections(text: string): ResumeSections {
   const lines = text.split('\n').filter(l => l.trim());
-  const name = lines[0] || 'Unknown';
-  const contactLine = lines.slice(0, 5).join(' ');
-  const emailMatch = contactLine.match(/[\w.-]+@[\w.-]+/);
-  const phoneMatch = contactLine.match(/\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
+  
+  // Extract name: use first line but truncate at common delimiters
+  const rawName = lines[0] || 'Unknown';
+  // Take only the first meaningful segment (before pipe, comma after name, or excessive length)
+  const name = rawName.split(/[|,]/)
+    .map(s => s.trim())
+    .find(s => s.length > 1 && s.length < 60 && !s.includes('@') && !s.match(/\d{5,}/)) || rawName.slice(0, 50);
+
+  const fullText = lines.slice(0, 8).join(' ');
+  const emailMatch = fullText.match(/[\w.-]+@[\w.-]+\.\w+/);
+  const phoneMatch = fullText.match(/\+?\d[\d\s\-().]{7,}\d/);
 
   const skills: string[] = [];
   const experience: ResumeSections['experience'] = [];
@@ -26,36 +33,57 @@ function parseResumeSections(text: string): ResumeSections {
   let section = '';
   let currentExp: any = null;
 
+  const sectionHeaders = [
+    { keys: ['CORE SKILLS', 'TECHNICAL SKILLS', 'SKILLS'], section: 'skills' },
+    { keys: ['WORK EXPERIENCE', 'PROFESSIONAL EXPERIENCE', 'EXPERIENCE', 'WORK HISTORY'], section: 'experience' },
+    { keys: ['EDUCATION'], section: 'education' },
+    { keys: ['PROFESSIONAL SUMMARY', 'SUMMARY', 'OBJECTIVE', 'PROFILE'], section: 'summary' },
+    { keys: ['PROJECTS'], section: 'projects' },
+    { keys: ['CERTIFICATIONS', 'CERTIFICATES'], section: 'certifications' },
+  ];
+
   for (const line of lines) {
-    const upper = line.toUpperCase().trim();
-    if (upper === 'SKILLS' || upper === 'TECHNICAL SKILLS' || upper.includes('SKILLS')) { section = 'skills'; continue; }
-    if (upper === 'EXPERIENCE' || upper.includes('EXPERIENCE') || upper.includes('WORK HISTORY')) { section = 'experience'; continue; }
-    if (upper === 'EDUCATION' || upper.includes('EDUCATION')) { section = 'education'; continue; }
-    if (upper === 'PROFESSIONAL SUMMARY' || upper === 'SUMMARY' || upper.includes('SUMMARY') || upper.includes('OBJECTIVE')) { section = 'summary'; continue; }
+    const upper = line.toUpperCase().trim().replace(/[:\-–—]/g, '').trim();
+    
+    // Check for section headers
+    const matchedSection = sectionHeaders.find(sh => sh.keys.some(k => upper === k || upper.startsWith(k + ' ')));
+    if (matchedSection) {
+      if (currentExp && section === 'experience') { experience.push(currentExp); currentExp = null; }
+      section = matchedSection.section;
+      continue;
+    }
 
     if (section === 'skills' && line.trim()) {
-      skills.push(...line.split(/[,;•·|]/).map(s => s.trim()).filter(s => s.length > 1));
+      // Handle "Category: skill1, skill2" format
+      const colonIdx = line.indexOf(':');
+      const skillText = colonIdx > 0 && colonIdx < 40 ? line.slice(colonIdx + 1) : line;
+      skills.push(...skillText.split(/[,;•·|]/).map(s => s.trim()).filter(s => s.length > 1 && s.length < 60));
     }
     if (section === 'experience') {
-      if ((line.includes('|') || line.includes('–') || line.includes('-')) && !line.startsWith('•') && !line.startsWith('-') && line.length < 120) {
+      if ((line.includes('|') || line.includes('–') || line.includes('—')) && !line.startsWith('•') && !line.startsWith('-') && line.length < 120) {
         if (currentExp) experience.push(currentExp);
         const parts = line.split(/[|–—]/).map(s => s.trim());
         currentExp = { role: parts[0], company: parts[1] || '', duration: parts[2] || '', bullets: [] };
-      } else if ((line.startsWith('•') || line.startsWith('-') || line.startsWith('*')) && currentExp) {
-        currentExp.bullets.push(line.replace(/^[•\-*]\s*/, '').trim());
+      } else if ((line.startsWith('•') || line.startsWith('-') || line.startsWith('*') || line.startsWith('●')) && currentExp) {
+        currentExp.bullets.push(line.replace(/^[•\-*●]\s*/, '').trim());
+      } else if (currentExp && line.trim().length > 10 && !line.match(/^[A-Z\s]{5,}$/)) {
+        // Treat as continuation bullet if it looks like content
+        currentExp.bullets.push(line.trim());
       }
     }
     if (section === 'education' && line.trim()) {
       const parts = line.split(/[|–—]/).map(s => s.trim());
       if (parts.length >= 2) {
         education.push({ degree: parts[0], school: parts[1], year: parts[2] || '' });
+      } else if (parts[0].length > 5) {
+        education.push({ degree: parts[0], school: '', year: '' });
       }
     }
   }
   if (currentExp) experience.push(currentExp);
 
   return {
-    contact: { name, email: emailMatch?.[0] || '', phone: phoneMatch?.[0] || '' },
+    contact: { name: name.trim(), email: emailMatch?.[0] || '', phone: phoneMatch?.[0] || '' },
     skills,
     experience,
     education,
@@ -213,10 +241,19 @@ export default function ResumeLab() {
                     {/* Contact */}
                     <div className="rounded-xl border border-border bg-card p-5">
                       <h3 className="text-sm font-semibold text-card-foreground mb-3">Contact</h3>
-                      <div className="grid grid-cols-3 gap-3 text-sm">
-                        <div><p className="text-xs text-muted-foreground">Name</p><p className="font-medium text-foreground">{resumeSections.contact.name}</p></div>
-                        <div><p className="text-xs text-muted-foreground">Email</p><p className="font-medium text-foreground">{resumeSections.contact.email || '—'}</p></div>
-                        <div><p className="text-xs text-muted-foreground">Phone</p><p className="font-medium text-foreground">{resumeSections.contact.phone || '—'}</p></div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted-foreground mb-0.5">Name</p>
+                          <p className="font-medium text-foreground break-words">{resumeSections.contact.name}</p>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted-foreground mb-0.5">Email</p>
+                          <p className="font-medium text-foreground break-all">{resumeSections.contact.email || '—'}</p>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted-foreground mb-0.5">Phone</p>
+                          <p className="font-medium text-foreground">{resumeSections.contact.phone || '—'}</p>
+                        </div>
                       </div>
                     </div>
 
