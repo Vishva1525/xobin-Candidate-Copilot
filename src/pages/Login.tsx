@@ -12,6 +12,8 @@ export default function Login() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (email.trim()) {
+      // Write to localStorage synchronously before navigating
+      window.localStorage.setItem('candidateos_email', JSON.stringify(email.trim()));
       setStoredEmail(email.trim());
       navigate('/dashboard');
     }
