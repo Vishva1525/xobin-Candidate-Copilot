@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useLocalStorage } from './use-local-storage';
-import { Application, Stage, TimelineStep, StageState, GateResult } from '@/lib/types';
+import { Application, Stage, StageState } from '@/lib/types';
 import { mockApplications } from '@/lib/mock-data';
 import { generateDemoHiringPlan, createInitialStageState } from '@/lib/hiring-plan-templates';
 import { callAI } from '@/lib/ai-service';
@@ -11,7 +11,7 @@ function getStorageKey(email: string) {
   return `candidateOS:${email}:applications`;
 }
 
-function generateTimeline(stage: Stage): TimelineStep[] {
+function generateTimeline(stage: Stage) {
   const stages: { stage: Stage; label: string }[] = [
     { stage: 'applied', label: 'Applied' },
     { stage: 'assessment', label: 'Assessment' },
@@ -19,10 +19,8 @@ function generateTimeline(stage: Stage): TimelineStep[] {
     { stage: 'recruiter-screen', label: 'Recruiter Screen' },
     { stage: 'offer', label: 'Offer' },
   ];
-
   const currentIdx = stages.findIndex(s => s.stage === stage);
   const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
   return stages.map((s, i) => ({
     ...s,
     completed: i < currentIdx,
@@ -45,13 +43,11 @@ function getInitialApps(email: string): Application[] {
     const stored = window.localStorage.getItem(getStorageKey(email));
     if (stored) return JSON.parse(stored);
   } catch {}
-
   if (email === DEMO_EMAIL) {
     const apps = mockApplications.map(addHiringPlanToMock);
     window.localStorage.setItem(getStorageKey(email), JSON.stringify(apps));
     return apps;
   }
-
   return [];
 }
 
@@ -79,7 +75,6 @@ export function useApplications() {
     const id = crypto.randomUUID();
     const hiringPlan = generateDemoHiringPlan(data.role, data.jobDescription);
     const stageState = createInitialStageState(data.stage);
-
     const newApp: Application = {
       id,
       role: data.role,
@@ -95,7 +90,6 @@ export function useApplications() {
       hiringPlan,
       stageState,
     };
-
     setApplications(prev => {
       const updated = [...prev, newApp];
       persist(updated);
@@ -115,7 +109,7 @@ export function useApplications() {
             return updated;
           });
         }
-      }).catch(() => { /* Keep deterministic plan */ });
+      }).catch(() => {});
     }
 
     return newApp;
@@ -133,19 +127,7 @@ export function useApplications() {
     });
   }, [setApplications, persist]);
 
-  const updateStageState = useCallback((appId: string, stageUpdates: Partial<StageState>) => {
-    setApplications(prev => {
-      const updated = prev.map(a => {
-        if (a.id !== appId) return a;
-        const newStageState = { ...(a.stageState || createInitialStageState(a.stage)), ...stageUpdates };
-        return { ...a, stageState: newStageState };
-      });
-      persist(updated);
-      return updated;
-    });
-  }, [setApplications, persist]);
-
-  const advanceStage = useCallback((appId: string, nextStage: Stage, gateResult: GateResult) => {
+  const advanceStage = useCallback((appId: string, nextStage: Stage) => {
     const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     setApplications(prev => {
       const updated = prev.map(a => {
@@ -156,8 +138,7 @@ export function useApplications() {
           if (step.stage === nextStage) return { ...step, current: true, date: today };
           return step;
         });
-        const newStatuses = { ...(a.stageState?.statuses || {}), [currentStage]: 'passed' as const, [nextStage]: 'in_progress' as const };
-        const newGateResults = { ...(a.stageState?.gateResults || {}), [currentStage]: gateResult };
+        const newStatuses = { ...(a.stageState?.statuses || {}), [currentStage]: 'completed' as const, [nextStage]: 'in_progress' as const };
         return {
           ...a,
           stage: nextStage,
@@ -166,7 +147,6 @@ export function useApplications() {
             ...(a.stageState || createInitialStageState(a.stage)),
             currentStageKey: nextStage,
             statuses: newStatuses,
-            gateResults: newGateResults,
           },
         };
       });
@@ -175,5 +155,5 @@ export function useApplications() {
     });
   }, [setApplications, persist]);
 
-  return { applications, addApplication, getApplication, updateApplication, updateStageState, advanceStage };
+  return { applications, addApplication, getApplication, updateApplication, advanceStage };
 }

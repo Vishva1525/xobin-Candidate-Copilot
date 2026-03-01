@@ -145,109 +145,50 @@ Return a JSON object with this exact structure:
       "label": "Applied",
       "description": "Application under review",
       "expectedDays": 5,
-      "gateType": "completion",
-      "stageObjective": "Get shortlisted",
-      "passingCriteria": "Resume reviewed"
+      "stageObjective": "Get shortlisted"
     },
     {
       "key": "assessment",
       "label": "Assessment",
       "description": "Skills evaluation specific to role",
       "expectedDays": 7,
-      "gateType": "ai_evaluated",
       "assessmentType": "type of assessment",
       "tasks": [
         { "id": "t1", "type": "short_answer", "question": "question text" }
       ],
-      "stageObjective": "Demonstrate core skills",
-      "passingCriteria": "Score 60+ with detailed responses"
+      "stageObjective": "Demonstrate core skills"
     },
     {
       "key": "ai-interview",
       "label": "AI Interview",
       "description": "Conversational evaluation",
       "expectedDays": 3,
-      "gateType": "ai_evaluated",
       "interviewStyle": "style description",
-      "stageObjective": "Show communication and problem-solving",
-      "passingCriteria": "Score 65+ on interview"
+      "stageObjective": "Show communication and problem-solving"
     },
     {
       "key": "recruiter-screen",
       "label": "Recruiter Screen",
       "description": "Live conversation",
       "expectedDays": 5,
-      "gateType": "ai_evaluated",
       "screenFocusAreas": ["area1", "area2"],
-      "stageObjective": "Demonstrate alignment",
-      "passingCriteria": "Clear responses"
+      "stageObjective": "Demonstrate alignment"
     },
     {
       "key": "offer",
       "label": "Offer",
       "description": "Offer review",
       "expectedDays": 14,
-      "gateType": "completion",
       "offerChecklist": ["item1", "item2"],
       "stageObjective": "Finalize acceptance"
     }
   ],
   "roleRubric": {
-    "weightedSkills": [{ "skill": "skill name", "weight": 30 }],
-    "thresholds": { "pass": 65, "retry": 40 }
+    "weightedSkills": [{ "skill": "skill name", "weight": 30 }]
   }
 }
 
 Tailor everything to the specific role. Assessment tasks should be 3-5 relevant challenges. Return ONLY valid JSON, no markdown.`;
-
-    case 'generate_assessment_tasks':
-      return `Generate role-specific assessment tasks.
-
-Role: ${payload.roleTitle || ''}
-Job Description: ${payload.jobDescription || ''}
-Assessment Type: ${payload.assessmentType || ''}
-
-Return a JSON array of 3-5 tasks:
-[
-  { "id": "t1", "type": "short_answer|mcq|coding|case_study|portfolio|design_task", "question": "text", "options": ["a","b","c","d"] }
-]
-
-Make tasks specific and challenging for the role. MCQs must have 4 options. Return ONLY valid JSON array, no markdown.`;
-
-    case 'evaluate_stage_gate':
-      return `You are a hiring evaluation AI. Evaluate the candidate's stage submission.
-
-Role: ${payload.roleTitle || ''}
-Stage: ${payload.stageKey || ''}
-Job Description: ${payload.jobDescription || ''}
-Resume: ${payload.resumeText || 'Not provided'}
-Attempt #: ${payload.attemptNumber || 1}
-Previous results: ${JSON.stringify(payload.previousResults || [])}
-
-Candidate's submissions:
-${JSON.stringify(payload.artifacts || {}, null, 2)}
-
-Evaluation criteria: ${payload.passingCriteria || 'Demonstrate competence'}
-
-SCORING RULES:
-- Vague, short, or generic answers: score LOW (20-40)
-- Answers with specific metrics, examples, data: score HIGHER
-- STAR completeness improves score significantly
-- Keyword/skill alignment with JD improves score
-- Do NOT always pass. Be realistic.
-- Pass threshold: 65
-- Retry threshold: 40 (below = fail)
-
-Return a JSON object:
-{
-  "decision": "pass|fail|retry",
-  "score": 72,
-  "reasons": ["reason1", "reason2"],
-  "improvements": ["improvement1", "improvement2"],
-  "nextStageKey": "next stage key or null"
-}
-
-Return ONLY valid JSON, no markdown.`;
 
     case 'recruiter_screen_questions':
       return `Generate recruiter screen follow-up questions.
