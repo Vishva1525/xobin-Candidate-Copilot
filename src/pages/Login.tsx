@@ -222,14 +222,14 @@ export default function Login() {
                 transition={{ delay: 0.4 }}
               >
                 <label htmlFor="email" className="block text-xs font-medium text-muted-foreground mb-1.5">
-                  Email address
+                  Username
                 </label>
                 <input
                   id="email"
-                  type="email"
+                  type="text"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder="Enter your username"
                   required
                   className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-ring/30 transition-all"
                 />
