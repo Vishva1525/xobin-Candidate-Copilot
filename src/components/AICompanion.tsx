@@ -118,7 +118,7 @@ export function AICompanion({ role, company, stage, jobDescription, resumeText }
               'max-w-[85%] rounded-xl px-3 py-2 text-sm leading-relaxed',
               msg.role === 'user'
                 ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-secondary-foreground prose prose-sm prose-p:my-1 prose-ul:my-1 prose-li:my-0'
+                : 'bg-secondary text-secondary-foreground prose prose-sm dark:prose-invert prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-headings:my-2 prose-headings:text-foreground prose-strong:text-foreground prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-muted prose-pre:rounded-lg prose-pre:p-3 prose-a:text-primary max-w-none'
             )}>
               {msg.role === 'assistant' ? (
                 <ReactMarkdown>{msg.content}</ReactMarkdown>
