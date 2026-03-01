@@ -439,61 +439,6 @@ export default function ResumeLab() {
                 )}
               </AIActionButton>
 
-              <AIActionButton
-                label="Skill gap analysis"
-                description="Compare your skills vs. the job requirements"
-                onClick={() => callAI('skill_gap_analysis', {
-                  resumeText,
-                  jd: mockApplications.find(a => a.id === selectedAppId)?.jobDescription,
-                })}
-              >
-                {(result) => (
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-xs font-medium text-foreground mb-1">Overall Match: <span className="text-success">{result.overallMatch}%</span></p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-foreground mb-1.5">Missing Skills</p>
-                      {result.missingSkills.map((s: any, i: number) => (
-                        <div key={i} className="mb-1.5">
-                          <span className={cn(
-                            'text-xs font-medium',
-                            s.priority === 'high' ? 'text-destructive' : s.priority === 'medium' ? 'text-warning' : 'text-muted-foreground'
-                          )}>
-                            {s.skill}
-                          </span>
-                          <p className="text-[10px] text-muted-foreground">{s.reason}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-foreground mb-1">Recommendations</p>
-                      {result.recommendations.map((r: string, i: number) => (
-                        <p key={i} className="text-xs text-muted-foreground mb-1">• {r}</p>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </AIActionButton>
-
-              <AIActionButton
-                label="Rewrite 3 bullets"
-                description="Make your experience more impact-driven"
-                onClick={() => callAI('rewrite_bullets', {
-                  bullets: resumeSections?.experience?.[0]?.bullets?.slice(0, 3) || [],
-                })}
-              >
-                {(result) => (
-                  <div className="space-y-3">
-                    {result.bullets.map((b: any, i: number) => (
-                      <div key={i} className="space-y-1">
-                        <p className="text-xs text-muted-foreground line-through">{b.original}</p>
-                        <p className="text-xs text-foreground">→ {b.improved}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </AIActionButton>
             </div>
           )}
         </div>
