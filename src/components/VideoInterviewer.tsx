@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHand
 import { motion, AnimatePresence } from 'framer-motion';
 import { Volume2, RotateCcw, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import avatarImg from '@/assets/interviewer-avatar.jpg';
 
 interface VideoInterviewerProps {
   questionText: string;
@@ -139,7 +140,7 @@ export const VideoInterviewer = forwardRef<VideoInterviewerHandle, VideoIntervie
             backgroundSize: '30px 30px',
           }} />
 
-          <AvatarFigure mouthOpen={mouthOpen} isSpeaking={isSpeaking} />
+          <AvatarPhoto mouthOpen={mouthOpen} isSpeaking={isSpeaking} />
 
           {/* Status indicators */}
           <AnimatePresence>
@@ -226,56 +227,23 @@ export const VideoInterviewer = forwardRef<VideoInterviewerHandle, VideoIntervie
 
 VideoInterviewer.displayName = 'VideoInterviewer';
 
-function AvatarFigure({ mouthOpen, isSpeaking }: { mouthOpen: number; isSpeaking: boolean }) {
-  const [blinking, setBlinking] = useState(false);
-
-  useEffect(() => {
-    const blink = () => {
-      setBlinking(true);
-      setTimeout(() => setBlinking(false), 150);
-    };
-    const interval = setInterval(blink, 3000 + Math.random() * 2000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const mouthHeight = 2 + mouthOpen * 10;
-  const mouthWidth = 16 + mouthOpen * 6;
-  const mouthY = 72 + (1 - mouthOpen) * 2;
-
+function AvatarPhoto({ mouthOpen, isSpeaking }: { mouthOpen: number; isSpeaking: boolean }) {
   return (
     <motion.div
       className="relative"
       animate={{ y: isSpeaking ? [0, -2, 0] : 0 }}
       transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
     >
-      <svg width="160" height="180" viewBox="0 0 120 140" fill="none">
-        <ellipse cx="60" cy="58" rx="38" ry="42" className="fill-[hsl(var(--muted))]" />
-        <path d="M22 48 C22 22 98 22 98 48 C98 36 90 18 60 18 C30 18 22 36 22 48Z" className="fill-[hsl(var(--foreground)/0.7)]" />
-        <path d="M38 42 Q44 38 50 42" strokeWidth="2" strokeLinecap="round" className="stroke-[hsl(var(--foreground)/0.5)]" fill="none" />
-        <path d="M70 42 Q76 38 82 42" strokeWidth="2" strokeLinecap="round" className="stroke-[hsl(var(--foreground)/0.5)]" fill="none" />
-        <ellipse cx="44" cy="50" rx="5" ry={blinking ? 0.5 : 5} className="fill-[hsl(var(--foreground)/0.75)]">
-          {!blinking && <animate attributeName="ry" values="5;5;5;0.5;5" dur="4s" repeatCount="indefinite" begin="2s" />}
-        </ellipse>
-        <ellipse cx="76" cy="50" rx="5" ry={blinking ? 0.5 : 5} className="fill-[hsl(var(--foreground)/0.75)]">
-          {!blinking && <animate attributeName="ry" values="5;5;5;0.5;5" dur="4s" repeatCount="indefinite" begin="2s" />}
-        </ellipse>
-        <circle cx="46" cy="48" r="1.5" className="fill-[hsl(var(--background))]" />
-        <circle cx="78" cy="48" r="1.5" className="fill-[hsl(var(--background))]" />
-        <path d="M58 55 Q60 62 62 55" strokeWidth="1.5" strokeLinecap="round" className="stroke-[hsl(var(--foreground)/0.2)]" fill="none" />
-        <motion.ellipse
-          cx="60" cy={mouthY} rx={mouthWidth / 2} ry={mouthHeight / 2}
-          className="fill-[hsl(var(--foreground)/0.6)]"
-          animate={{ ry: mouthHeight / 2, rx: mouthWidth / 2, cy: mouthY }}
-          transition={{ duration: 0.08 }}
-        />
-        {!isSpeaking && (
-          <path d="M50 70 Q60 78 70 70" strokeWidth="2" strokeLinecap="round" className="stroke-[hsl(var(--foreground)/0.4)]" fill="none" />
+      <div className="relative w-36 h-36 rounded-full overflow-hidden border-4 border-primary/20 shadow-lg">
+        <img src={avatarImg} alt="Interviewer Alex Morgan" className="w-full h-full object-cover" />
+        {isSpeaking && (
+          <motion.div
+            className="absolute inset-0 rounded-full border-4 border-primary/40"
+            animate={{ scale: [1, 1.08, 1], opacity: [0.6, 0, 0.6] }}
+            transition={{ repeat: Infinity, duration: 1.2 }}
+          />
         )}
-        <rect x="50" y="96" width="20" height="12" rx="4" className="fill-[hsl(var(--muted))]" />
-        <path d="M20 140 Q20 108 48 108 L72 108 Q100 108 100 140Z" className="fill-[hsl(var(--primary)/0.3)]" />
-        <path d="M48 108 L56 120 L60 108" strokeWidth="1.5" className="stroke-[hsl(var(--background)/0.5)]" fill="none" />
-        <path d="M72 108 L64 120 L60 108" strokeWidth="1.5" className="stroke-[hsl(var(--background)/0.5)]" fill="none" />
-      </svg>
+      </div>
     </motion.div>
   );
 }
