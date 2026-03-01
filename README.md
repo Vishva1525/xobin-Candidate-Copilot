@@ -113,7 +113,7 @@ Vercel
 
 Live Demo
 
-https://your-vercel-link.vercel.app
+https://xobin-candidate-copilot.vercel.app/
 
 
 Product Philosophy
