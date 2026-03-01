@@ -312,49 +312,17 @@ export default function Login() {
               <button
                 type="button"
                 onClick={async () => {
-                  const isLovable = window.location.origin.includes('lovable.app') || window.location.origin.includes('lovableproject.com');
-                  if (isLovable) {
-                    // On Lovable preview, use managed OAuth redirect
+                  try {
                     const { error } = await lovable.auth.signInWithOAuth("google", {
                       redirect_uri: window.location.origin,
                       extraParams: { prompt: "select_account" },
                     });
-                    if (error) console.error("Google sign-in error:", error);
-                  } else {
-                    // On external hosts (Vercel, etc.), use popup-based OAuth
-                    const { data, error } = await supabase.auth.signInWithOAuth({
-                      provider: 'google',
-                      options: {
-                        skipBrowserRedirect: true,
-                        queryParams: { prompt: 'select_account' },
-                        redirectTo: window.location.origin,
-                      },
-                    });
+
                     if (error) {
                       console.error("Google sign-in error:", error);
-                      return;
                     }
-                    if (data?.url) {
-                      const popup = window.open(data.url, 'google-oauth', 'width=500,height=600,scrollbars=yes');
-                      if (!popup) {
-                        // Popup blocked — fall back to full redirect
-                        window.location.href = data.url;
-                        return;
-                      }
-                      // Poll for popup close and check session
-                      const pollTimer = setInterval(async () => {
-                        if (popup.closed) {
-                          clearInterval(pollTimer);
-                          const { data: sessionData } = await supabase.auth.getSession();
-                          if (sessionData.session?.user) {
-                            const userEmail = sessionData.session.user.email || sessionData.session.user.user_metadata?.email || '';
-                            window.localStorage.setItem('candidateos_email', JSON.stringify(userEmail));
-                            setStoredEmail(userEmail);
-                            navigate('/dashboard', { replace: true });
-                          }
-                        }
-                      }, 500);
-                    }
+                  } catch (error) {
+                    console.error("Google sign-in failed:", error);
                   }
                 }}
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground hover:bg-accent hover:border-primary/20 transition-all"
