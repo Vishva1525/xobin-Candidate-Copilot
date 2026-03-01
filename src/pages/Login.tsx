@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { lovable } from '@/integrations/lovable/index';
+import { supabase } from '@/integrations/supabase/client';
 import { Plane, ArrowRight, Brain, Compass, Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -23,7 +24,7 @@ const features = [
 function FloatingOrb({ className, delay = 0 }: { className: string; delay?: number }) {
   return (
     <motion.div
-      className={`absolute rounded-full blur-3xl opacity-20 pointer-events-none ${className}`}
+      className={`absolute rounded-full blur-3xl opacity-10 pointer-events-none ${className}`}
       animate={{
         y: [0, -30, 0, 20, 0],
         x: [0, 15, -10, 5, 0],
@@ -42,11 +43,34 @@ export default function Login() {
   const [, setStoredEmail] = useLocalStorage<string | null>('candidateos_email', null);
   const navigate = useNavigate();
 
+  // Listen for auth state changes (Google OAuth callback)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const userEmail = session.user.email || session.user.user_metadata?.email || '';
+        window.localStorage.setItem('candidateos_email', JSON.stringify(userEmail));
+        setStoredEmail(userEmail);
+        navigate('/dashboard');
+      }
+    });
+
+    // Also check if already signed in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const userEmail = session.user.email || '';
+        window.localStorage.setItem('candidateos_email', JSON.stringify(userEmail));
+        setStoredEmail(userEmail);
+        navigate('/dashboard');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, setStoredEmail]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
     setLoading(true);
-    // Simulate brief loading
     await new Promise(r => setTimeout(r, 600));
     window.localStorage.setItem('candidateos_email', JSON.stringify(email.trim()));
     setStoredEmail(email.trim());
@@ -54,24 +78,21 @@ export default function Login() {
   };
 
   return (
-    <div
-      className="relative flex min-h-screen overflow-hidden"
-      style={{ background: 'hsl(222, 47%, 6%)' }}
-    >
+    <div className="relative flex min-h-screen overflow-hidden bg-background">
       {/* Animated grid background */}
       <div
-        className="absolute inset-0 opacity-[0.04]"
+        className="absolute inset-0 opacity-[0.03]"
         style={{
-          backgroundImage: `linear-gradient(hsl(199, 89%, 48%) 1px, transparent 1px), linear-gradient(90deg, hsl(199, 89%, 48%) 1px, transparent 1px)`,
+          backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
           backgroundSize: '60px 60px',
         }}
       />
 
-      {/* Floating gradient orbs */}
-      <FloatingOrb className="w-96 h-96 top-[-10%] left-[10%] bg-[hsl(199,89%,48%)]" delay={0} />
-      <FloatingOrb className="w-[500px] h-[500px] bottom-[-15%] right-[5%] bg-[hsl(262,83%,58%)]" delay={3} />
-      <FloatingOrb className="w-72 h-72 top-[40%] left-[50%] bg-[hsl(199,89%,48%)]" delay={6} />
-      <FloatingOrb className="w-80 h-80 top-[10%] right-[30%] bg-[hsl(262,83%,58%)]" delay={9} />
+      {/* Floating gradient orbs using theme tokens */}
+      <FloatingOrb className="w-96 h-96 top-[-10%] left-[10%] bg-primary" delay={0} />
+      <FloatingOrb className="w-[500px] h-[500px] bottom-[-15%] right-[5%] bg-info" delay={3} />
+      <FloatingOrb className="w-72 h-72 top-[40%] left-[50%] bg-primary" delay={6} />
+      <FloatingOrb className="w-80 h-80 top-[10%] right-[30%] bg-info" delay={9} />
 
       {/* LEFT PANEL — Branding (hidden on mobile) */}
       <motion.div
@@ -83,14 +104,13 @@ export default function Login() {
         {/* Logo */}
         <motion.div variants={item} className="flex items-center gap-2.5">
           <motion.div
-            className="flex h-10 w-10 items-center justify-center rounded-xl"
-            style={{ background: 'linear-gradient(135deg, hsl(199, 89%, 48%), hsl(262, 83%, 58%))' }}
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary glow-primary-sm"
             animate={{ rotate: [0, -5, 5, 0] }}
             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <Plane className="h-5 w-5 text-white" />
+            <Plane className="h-5 w-5 text-primary-foreground" />
           </motion.div>
-          <span className="text-lg font-semibold text-white/90" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+          <span className="text-lg font-semibold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
             Xobin
           </span>
         </motion.div>
@@ -99,20 +119,15 @@ export default function Login() {
         <div className="max-w-lg">
           <motion.h1
             variants={item}
-            className="text-4xl xl:text-5xl font-bold leading-[1.1] tracking-tight text-white"
+            className="text-4xl xl:text-5xl font-bold leading-[1.1] tracking-tight text-foreground"
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             You are the pilot.
             <br />
             We're your{' '}
-            <span
-              className="bg-clip-text text-transparent"
-              style={{ backgroundImage: 'linear-gradient(135deg, hsl(199, 89%, 48%), hsl(262, 83%, 58%))' }}
-            >
-              CoPilot.
-            </span>
+            <span className="text-gradient">CoPilot.</span>
           </motion.h1>
-          <motion.p variants={item} className="mt-5 text-base text-white/50 leading-relaxed max-w-md">
+          <motion.p variants={item} className="mt-5 text-base text-muted-foreground leading-relaxed max-w-md">
             Your AI-powered companion for the entire hiring journey — from application tracking to interview prep. We navigate together.
           </motion.p>
 
@@ -124,17 +139,14 @@ export default function Login() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.6 + i * 0.15, duration: 0.5 }}
-                className="group flex items-start gap-4 rounded-xl border border-white/[0.06] bg-white/[0.03] backdrop-blur-sm p-4 hover:border-[hsl(199,89%,48%)]/20 hover:bg-white/[0.05] transition-all duration-300"
+                className="group flex items-start gap-4 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-4 hover:border-primary/30 hover:bg-card/80 transition-all duration-300"
               >
-                <div
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-                  style={{ background: 'linear-gradient(135deg, hsl(199, 89%, 48%, 0.15), hsl(262, 83%, 58%, 0.15))' }}
-                >
-                  <f.icon className="h-5 w-5" style={{ color: 'hsl(199, 89%, 48%)' }} />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15">
+                  <f.icon className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-white/90">{f.title}</p>
-                  <p className="text-xs text-white/40 mt-0.5 leading-relaxed">{f.desc}</p>
+                  <p className="text-sm font-semibold text-foreground">{f.title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{f.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -142,7 +154,7 @@ export default function Login() {
         </div>
 
         {/* Footer */}
-        <motion.p variants={item} className="text-xs text-white/25">
+        <motion.p variants={item} className="text-xs text-muted-foreground/50">
           © 2026 Xobin. All rights reserved.
         </motion.p>
       </motion.div>
@@ -155,11 +167,8 @@ export default function Login() {
           transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="w-full max-w-md"
         >
-          {/* Glassmorphic card */}
-          <div
-            className="rounded-2xl border border-white/[0.08] p-8 sm:p-10 backdrop-blur-xl"
-            style={{ background: 'linear-gradient(145deg, hsla(222, 47%, 11%, 0.8), hsla(222, 47%, 8%, 0.9))' }}
-          >
+          {/* Card */}
+          <div className="rounded-2xl border border-border bg-card p-8 sm:p-10 backdrop-blur-xl shadow-lg">
             {/* Brand inside card */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -168,29 +177,20 @@ export default function Login() {
               className="text-center mb-8"
             >
               <motion.div
-                className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
-                style={{
-                  background: 'linear-gradient(135deg, hsl(199, 89%, 48%), hsl(262, 83%, 58%))',
-                  boxShadow: '0 0 30px hsl(199, 89%, 48%, 0.3)',
-                }}
+                className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary glow-primary"
                 animate={{ rotate: [0, -3, 3, 0] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
               >
-                <Plane className="h-7 w-7 text-white" />
+                <Plane className="h-7 w-7 text-primary-foreground" />
               </motion.div>
               <h2
-                className="text-xl font-bold text-white"
+                className="text-xl font-bold text-foreground"
                 style={{ fontFamily: "'Space Grotesk', sans-serif" }}
               >
                 Xobin{' '}
-                <span
-                  className="bg-clip-text text-transparent"
-                  style={{ backgroundImage: 'linear-gradient(135deg, hsl(199, 89%, 48%), hsl(262, 83%, 58%))' }}
-                >
-                  CoPilot
-                </span>
+                <span className="text-gradient">CoPilot</span>
               </h2>
-              <p className="text-xs text-white/40 mt-1.5">Sign in to your candidate dashboard</p>
+              <p className="text-xs text-muted-foreground mt-1.5">Sign in to your candidate dashboard</p>
             </motion.div>
 
             {/* Form */}
@@ -201,7 +201,7 @@ export default function Login() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                <label htmlFor="email" className="block text-xs font-medium text-white/50 mb-1.5">
+                <label htmlFor="email" className="block text-xs font-medium text-muted-foreground mb-1.5">
                   Email address
                 </label>
                 <input
@@ -211,7 +211,7 @@ export default function Login() {
                   onChange={e => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   required
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/25 focus:border-[hsl(199,89%,48%)]/50 focus:outline-none focus:ring-1 focus:ring-[hsl(199,89%,48%)]/30 transition-all"
+                  className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-ring/30 transition-all"
                 />
               </motion.div>
 
@@ -222,10 +222,10 @@ export default function Login() {
                 transition={{ delay: 0.5 }}
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <label htmlFor="password" className="block text-xs font-medium text-white/50">
+                  <label htmlFor="password" className="block text-xs font-medium text-muted-foreground">
                     Password
                   </label>
-                  <button type="button" className="text-[11px] text-[hsl(199,89%,48%)] hover:text-[hsl(199,89%,58%)] transition-colors">
+                  <button type="button" className="text-[11px] text-primary hover:text-primary/80 transition-colors">
                     Forgot password?
                   </button>
                 </div>
@@ -236,12 +236,12 @@ export default function Login() {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 pr-10 text-sm text-white placeholder:text-white/25 focus:border-[hsl(199,89%,48%)]/50 focus:outline-none focus:ring-1 focus:ring-[hsl(199,89%,48%)]/30 transition-all"
+                    className="w-full rounded-xl border border-border bg-input px-4 py-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-ring/30 transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -257,11 +257,7 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="group relative flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-all duration-300 hover:brightness-110 disabled:opacity-70"
-                  style={{
-                    background: 'linear-gradient(135deg, hsl(199, 89%, 48%), hsl(199, 89%, 38%))',
-                    boxShadow: '0 0 20px hsl(199, 89%, 48%, 0.3), 0 4px 15px hsl(199, 89%, 48%, 0.15)',
-                  }}
+                  className="group relative flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-all duration-300 hover:brightness-110 disabled:opacity-70 glow-primary-sm"
                 >
                   {loading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -282,9 +278,9 @@ export default function Login() {
               transition={{ delay: 0.7 }}
               className="flex items-center gap-3 my-6"
             >
-              <div className="flex-1 h-px bg-white/[0.06]" />
-              <span className="text-[11px] text-white/30">or continue with</span>
-              <div className="flex-1 h-px bg-white/[0.06]" />
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-[11px] text-muted-foreground">or continue with</span>
+              <div className="flex-1 h-px bg-border" />
             </motion.div>
 
             {/* Google sign-in */}
@@ -302,7 +298,7 @@ export default function Login() {
                   });
                   if (error) console.error("Google sign-in error:", error);
                 }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm font-medium text-white/70 hover:bg-white/[0.06] hover:border-white/[0.12] transition-all"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground hover:bg-accent hover:border-primary/20 transition-all"
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1Z" />
@@ -313,29 +309,6 @@ export default function Login() {
                 Sign in with Google
               </button>
             </motion.div>
-
-            {/* Create account */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.9 }}
-              className="text-center text-xs text-white/30 mt-6"
-            >
-              New to Xobin?{' '}
-              <button type="button" className="text-[hsl(199,89%,48%)] hover:text-[hsl(199,89%,58%)] font-medium transition-colors">
-                Create an account
-              </button>
-            </motion.p>
-
-            {/* Demo hint */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1 }}
-              className="text-center text-[10px] text-white/20 mt-3"
-            >
-              Demo mode — enter any email to explore
-            </motion.p>
           </div>
         </motion.div>
       </div>
