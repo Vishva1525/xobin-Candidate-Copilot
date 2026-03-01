@@ -1,5 +1,17 @@
 export type Stage = 'applied' | 'assessment' | 'ai-interview' | 'recruiter-screen' | 'offer' | 'rejected';
 
+export type UnifiedStageKey = 'applied' | 'screening' | 'assessment' | 'ai_interview' | 'recruiter_review' | 'offer' | 'rejected';
+
+export interface StageTimelineEntry {
+  key: UnifiedStageKey;
+  label: string;
+  status: 'completed' | 'active' | 'upcoming' | 'rejected';
+  etaText: string;
+  candidateExpectation: string;
+  companyBackground: string;
+  lastUpdatedAt: string;
+}
+
 export interface TimelineStep {
   stage: Stage;
   label: string;
@@ -31,6 +43,10 @@ export interface Application {
   jobDescription: string;
   deadlines: Deadline[];
   messages: Message[];
+  stageTimeline?: StageTimelineEntry[];
+  lastActivityAt?: string;
+  typicalResponseDays?: number;
+  handlerRole?: string;
 }
 
 export interface ResumeContact {

@@ -1,4 +1,70 @@
-import { Application } from './types';
+import { Application, StageTimelineEntry } from './types';
+
+function generateStageTimeline(currentStage: string, roleType: 'tech' | 'design'): StageTimelineEntry[] {
+  const stageOrder = ['applied', 'screening', 'assessment', 'ai_interview', 'recruiter_review', 'offer'] as const;
+  const stageLabels: Record<string, string> = {
+    applied: 'Applied',
+    screening: 'Screening',
+    assessment: 'Assessment',
+    ai_interview: 'AI Interview',
+    recruiter_review: 'Recruiter Review',
+    offer: 'Offer',
+  };
+  
+  // Map old stage keys to new unified keys
+  const stageKeyMap: Record<string, string> = {
+    applied: 'applied',
+    assessment: 'assessment',
+    'ai-interview': 'ai_interview',
+    'recruiter-screen': 'recruiter_review',
+    offer: 'offer',
+    rejected: 'rejected',
+  };
+  const mappedCurrent = stageKeyMap[currentStage] || currentStage;
+  const currentIdx = stageOrder.indexOf(mappedCurrent as any);
+
+  const techGuidance: Record<string, { candidate: string; company: string; eta: string }> = {
+    applied: { candidate: 'No action needed — sit tight.', company: 'Reviewing your resume against role requirements.', eta: '3–5 days' },
+    screening: { candidate: 'Be available for a quick call. Check your email for scheduling.', company: 'HR is reviewing your profile and may schedule a brief call.', eta: '2–4 days' },
+    assessment: { candidate: 'Complete the coding challenge. Focus on clean code and edge cases.', company: 'Engineering team will review your submission against a rubric.', eta: '3–7 days' },
+    ai_interview: { candidate: 'Practice STAR answers. Test your audio/video setup.', company: 'AI system evaluates communication and problem-solving.', eta: '1–2 days' },
+    recruiter_review: { candidate: 'Prepare questions about team and role. Know your salary range.', company: 'Hiring manager reviews all scores and makes a recommendation.', eta: '3–5 days' },
+    offer: { candidate: 'Review the full package. Take time to decide.', company: 'Drafting and sending your offer letter.', eta: '2–5 days' },
+  };
+
+  const designGuidance: Record<string, { candidate: string; company: string; eta: string }> = {
+    applied: { candidate: 'No action needed — your portfolio is being reviewed.', company: 'Design lead is reviewing your portfolio and case studies.', eta: '3–7 days' },
+    screening: { candidate: 'Be ready for a culture-fit call. Prepare your "why" story.', company: 'Recruiter evaluating initial fit and communication.', eta: '2–4 days' },
+    assessment: { candidate: 'Complete the design challenge. Show process, not just polish.', company: 'Design team reviews your challenge against craft standards.', eta: '5–7 days' },
+    ai_interview: { candidate: 'Walk through a case study with clear structure. Test A/V.', company: 'AI evaluates design thinking and presentation skills.', eta: '1–2 days' },
+    recruiter_review: { candidate: 'Prepare design critique talking points. Know your growth goals.', company: 'Design lead + hiring manager make a joint decision.', eta: '3–5 days' },
+    offer: { candidate: 'Review leveling, scope, and team composition.', company: 'Preparing offer details and discussing start date.', eta: '2–5 days' },
+  };
+
+  const guidance = roleType === 'design' ? designGuidance : techGuidance;
+  const now = new Date();
+
+  return stageOrder.map((key, i) => {
+    let status: StageTimelineEntry['status'] = 'upcoming';
+    if (i < currentIdx) status = 'completed';
+    else if (i === currentIdx) status = 'active';
+
+    const g = guidance[key];
+    const dayOffset = (i - currentIdx) * 3;
+    const date = new Date(now);
+    date.setDate(date.getDate() + dayOffset);
+
+    return {
+      key,
+      label: stageLabels[key],
+      status,
+      etaText: g.eta,
+      candidateExpectation: g.candidate,
+      companyBackground: g.company,
+      lastUpdatedAt: date.toISOString(),
+    };
+  });
+}
 
 export const mockApplications: Application[] = [
   {
@@ -14,6 +80,10 @@ export const mockApplications: Application[] = [
       { stage: 'recruiter-screen', label: 'Recruiter Screen', completed: false, current: false },
       { stage: 'offer', label: 'Offer', completed: false, current: false },
     ],
+    stageTimeline: generateStageTimeline('assessment', 'tech'),
+    lastActivityAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    typicalResponseDays: 5,
+    handlerRole: 'Recruiting Coordinator',
     jobDescription: `About the Role
 We're looking for a Senior Frontend Engineer to join our Dashboard team at Stripe. You'll build the tools that millions of businesses use to manage their payments infrastructure.
 
@@ -78,6 +148,10 @@ Nice to Have
       { stage: 'recruiter-screen', label: 'Design Lead Chat', completed: false, current: false },
       { stage: 'offer', label: 'Offer', completed: false, current: false },
     ],
+    stageTimeline: generateStageTimeline('ai-interview', 'design'),
+    lastActivityAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    typicalResponseDays: 3,
+    handlerRole: 'Hiring Manager',
     jobDescription: `About the Role
 Linear is looking for a Product Designer who obsesses over craft and simplicity. You'll shape the future of how software teams plan and build products.
 
