@@ -1,7 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, Brain, LogOut, Sparkles } from 'lucide-react';
+import { LayoutDashboard, FileText, Brain, LogOut, Sparkles, Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
+import { useTheme } from '@/hooks/use-theme';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -12,6 +14,7 @@ const navItems = [
 export function Sidebar() {
   const location = useLocation();
   const { email, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <aside className="flex w-64 flex-col border-r border-sidebar-border bg-sidebar">
@@ -45,8 +48,31 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* User */}
-      <div className="border-t border-sidebar-border px-4 py-4">
+      {/* Theme toggle + User */}
+      <div className="border-t border-sidebar-border px-4 py-4 space-y-3">
+        {/* Theme toggle */}
+        <button
+          onClick={toggleTheme}
+          className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+        >
+          <span className="text-xs font-medium">{theme === 'dark' ? 'Dark' : 'Light'} Mode</span>
+          <div className="relative flex h-7 w-12 items-center rounded-full bg-muted p-0.5 transition-colors">
+            <motion.div
+              className="flex h-6 w-6 items-center justify-center rounded-full bg-primary shadow-sm"
+              animate={{ x: theme === 'light' ? 20 : 0 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            >
+              {theme === 'dark' ? (
+                <Moon className="h-3.5 w-3.5 text-primary-foreground" />
+              ) : (
+                <Sun className="h-3.5 w-3.5 text-primary-foreground" />
+              )}
+            </motion.div>
+          </div>
+        </button>
+
+        {/* User info */}
         <div className="flex items-center justify-between">
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-sidebar-accent-foreground">{email}</p>

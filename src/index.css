@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @layer base {
+  /* Dark mode (default) */
   :root {
     --background: 224 32% 8%;
     --foreground: 210 40% 96%;
@@ -48,6 +49,52 @@
     --sidebar-border: 224 16% 14%;
     --sidebar-ring: 187 72% 46%;
   }
+
+  /* Light mode */
+  .light {
+    --background: 210 30% 98%;
+    --foreground: 224 32% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 32% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 32% 12%;
+    --primary: 187 72% 38%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 214 20% 93%;
+    --secondary-foreground: 224 20% 30%;
+    --muted: 214 18% 93%;
+    --muted-foreground: 215 16% 44%;
+    --accent: 187 30% 92%;
+    --accent-foreground: 187 72% 30%;
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 20% 88%;
+    --input: 214 20% 93%;
+    --ring: 187 72% 38%;
+
+    --success: 160 60% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 45%;
+    --warning-foreground: 38 30% 15%;
+    --info: 217 91% 50%;
+    --info-foreground: 0 0% 100%;
+
+    --stage-applied: 217 91% 50%;
+    --stage-assessment: 38 92% 45%;
+    --stage-interview: 187 72% 38%;
+    --stage-screen: 280 65% 50%;
+    --stage-offer: 160 60% 36%;
+    --stage-rejected: 0 72% 50%;
+
+    --sidebar-background: 210 25% 96%;
+    --sidebar-foreground: 224 20% 40%;
+    --sidebar-primary: 187 72% 38%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 214 20% 90%;
+    --sidebar-accent-foreground: 224 20% 18%;
+    --sidebar-border: 214 20% 88%;
+    --sidebar-ring: 187 72% 38%;
+  }
 }
 
 @layer base {
@@ -68,20 +115,20 @@
     @apply hover:bg-card/90 hover:border-border transition-all duration-200;
   }
   .glow-primary {
-    box-shadow: 0 0 30px -8px hsl(187 72% 46% / 0.25);
+    box-shadow: 0 0 30px -8px hsl(var(--primary) / 0.25);
   }
   .glow-primary-sm {
-    box-shadow: 0 0 15px -4px hsl(187 72% 46% / 0.2);
+    box-shadow: 0 0 15px -4px hsl(var(--primary) / 0.2);
   }
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(187 72% 46%), hsl(217 91% 60%));
+    background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--info)));
   }
   .bg-gradient-subtle {
-    background: linear-gradient(135deg, hsl(224 32% 8%) 0%, hsl(224 28% 11%) 100%);
+    background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--card)) 100%);
   }
   .bg-dot-pattern {
-    background-image: radial-gradient(circle, hsl(224 16% 20%) 1px, transparent 1px);
+    background-image: radial-gradient(circle, hsl(var(--muted)) 1px, transparent 1px);
     background-size: 24px 24px;
   }
 }
@@ -94,9 +141,9 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(224 16% 22%);
+  background: hsl(var(--muted));
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(224 16% 30%);
+  background: hsl(var(--muted-foreground) / 0.5);
 }
