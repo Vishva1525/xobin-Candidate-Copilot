@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Layout } from '@/components/Layout';
+import { VideoInterviewer } from '@/components/VideoInterviewer';
 import { mockApplications } from '@/lib/mock-data';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { callAI } from '@/lib/ai-service';
-import { motion } from 'framer-motion';
-import { Brain, Sparkles, Loader2, ArrowRight, CheckCircle2, ChevronRight, AlertCircle, Copy, Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Brain, Sparkles, Loader2, ArrowRight, CheckCircle2, ChevronRight, AlertCircle, Copy, Check, Video, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 type InterviewState = 'select' | 'questions' | 'interview' | 'summary';
+type InterviewMode = 'text' | 'video';
 
 interface RubricBreakdown {
   relevance: number;
@@ -77,11 +79,11 @@ function RubricBar({ label, score, max }: { label: string; score: number; max: n
 export default function PrepStudio() {
   const [selectedAppId, setSelectedAppId] = useState(mockApplications[0].id);
   const [state, setState] = useState<InterviewState>('select');
+  const [mode, setMode] = useState<InterviewMode>('text');
   const [questions, setQuestions] = useState<any>(null);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [resumeText] = useLocalStorage<string>('candidateos_resume', '');
 
-  // Mock interview state
   const [interviewQuestions, setInterviewQuestions] = useState<string[]>([]);
   const [currentQ, setCurrentQ] = useState(0);
   const [answer, setAnswer] = useState('');
@@ -89,6 +91,7 @@ export default function PrepStudio() {
   const [loadingFeedback, setLoadingFeedback] = useState(false);
   const [overallScore, setOverallScore] = useState(0);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const [speechDone, setSpeechDone] = useState(false);
 
   const selectedApp = mockApplications.find(a => a.id === selectedAppId)!;
   const hasResume = !!resumeText;
@@ -98,6 +101,7 @@ export default function PrepStudio() {
     const result = await callAI('generate_interview_questions', {
       jd: selectedApp.jobDescription,
       resumeText,
+      videoInterview: mode === 'video',
     });
     setQuestions(result);
     setState('questions');
@@ -113,6 +117,7 @@ export default function PrepStudio() {
     setCurrentQ(0);
     setFeedback([]);
     setAnswer('');
+    setSpeechDone(false);
     setState('interview');
   };
 
@@ -145,6 +150,7 @@ export default function PrepStudio() {
     if (currentQ < interviewQuestions.length - 1) {
       setCurrentQ(currentQ + 1);
       setAnswer('');
+      setSpeechDone(false);
     } else {
       const avg = Math.round(newFeedback.reduce((s, f) => s + f.score, 0) / newFeedback.length);
       setOverallScore(avg);
@@ -165,29 +171,61 @@ export default function PrepStudio() {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-3xl mx-auto"
+          className="max-w-4xl mx-auto"
         >
-          <div className="flex items-center gap-2 mb-1">
-            <Brain className="h-5 w-5 text-primary" />
-            <h1 className="text-2xl font-bold text-foreground">Prep Studio</h1>
-          </div>
-          <p className="text-sm text-muted-foreground mb-8">Practice with AI-powered mock interviews and get instant feedback.</p>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-primary" />
+              <h1 className="text-2xl font-bold text-foreground">Prep Studio</h1>
+            </div>
 
-          {/* Resume status indicator */}
+            {/* Mode toggle */}
+            {(state === 'select' || state === 'questions') && (
+              <div className="flex items-center rounded-lg border border-border bg-card p-0.5">
+                <button
+                  onClick={() => setMode('text')}
+                  className={cn(
+                    'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all',
+                    mode === 'text' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  Text Interview
+                </button>
+                <button
+                  onClick={() => setMode('video')}
+                  className={cn(
+                    'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all',
+                    mode === 'video' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  <Video className="h-3.5 w-3.5" />
+                  Video Interview
+                </button>
+              </div>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground mb-8">
+            {mode === 'video'
+              ? 'Practice with a simulated video interviewer who asks questions aloud.'
+              : 'Practice with AI-powered mock interviews and get instant feedback.'}
+          </p>
+
+          {/* Resume status */}
           {!hasResume && (
             <div className="mb-6 rounded-lg border border-warning/30 bg-warning/10 px-4 py-2.5 flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-warning shrink-0" />
-              <p className="text-sm text-warning">Upload your resume in Resume Lab for more personalized scoring and feedback.</p>
+              <p className="text-sm text-warning">Upload your resume in Resume Lab for more personalized scoring.</p>
             </div>
           )}
           {hasResume && (
             <div className="mb-6 rounded-lg border border-success/30 bg-success/10 px-4 py-2.5 flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
-              <p className="text-sm text-success font-medium">Resume loaded — scoring uses your background for better feedback</p>
+              <p className="text-sm text-success font-medium">Resume loaded — scoring uses your background</p>
             </div>
           )}
 
-          {/* Application selector */}
+          {/* Select */}
           {state === 'select' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
               <div className="rounded-xl border border-border bg-card p-6">
@@ -221,60 +259,41 @@ export default function PrepStudio() {
                   {loadingQuestions ? (
                     <><Loader2 className="h-4 w-4 animate-spin" /> Generating...</>
                   ) : (
-                    <><Sparkles className="h-4 w-4" /> Generate Interview Questions</>
+                    <><Sparkles className="h-4 w-4" /> Generate {mode === 'video' ? 'Video' : ''} Interview Questions</>
                   )}
                 </button>
               </div>
             </motion.div>
           )}
 
-          {/* Questions view */}
+          {/* Questions */}
           {state === 'questions' && questions && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
               <div className="rounded-xl border border-border bg-card p-6">
                 <h2 className="text-sm font-semibold text-card-foreground mb-1">
-                  Interview Questions for {selectedApp.role}
+                  {mode === 'video' ? 'Video ' : ''}Interview Questions for {selectedApp.role}
                 </h2>
                 <p className="text-xs text-muted-foreground mb-4">{selectedApp.company}</p>
 
                 <div className="space-y-4">
-                  <div>
-                    <h3 className="text-xs font-semibold text-primary mb-2">Behavioral ({questions.behavioral.length})</h3>
-                    <div className="space-y-2">
-                      {questions.behavioral.map((q: string, i: number) => (
-                        <p key={i} className="text-sm text-muted-foreground flex gap-2">
-                          <span className="text-primary font-medium shrink-0">{i + 1}.</span>
-                          {q}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-xs font-semibold text-primary mb-2">Technical ({questions.technical.length})</h3>
-                    <div className="space-y-2">
-                      {questions.technical.map((q: string, i: number) => (
-                        <p key={i} className="text-sm text-muted-foreground flex gap-2">
-                          <span className="text-primary font-medium shrink-0">{i + 1}.</span>
-                          {q}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-
-                  {questions.roleSpecific?.length > 0 && (
-                    <div>
-                      <h3 className="text-xs font-semibold text-primary mb-2">Role-Specific ({questions.roleSpecific.length})</h3>
-                      <div className="space-y-2">
-                        {questions.roleSpecific.map((q: string, i: number) => (
-                          <p key={i} className="text-sm text-muted-foreground flex gap-2">
-                            <span className="text-primary font-medium shrink-0">{i + 1}.</span>
-                            {q}
-                          </p>
-                        ))}
+                  {['behavioral', 'technical', 'roleSpecific'].map(type => {
+                    const items = questions[type];
+                    if (!items?.length) return null;
+                    const label = type === 'behavioral' ? 'Behavioral' : type === 'technical' ? 'Technical' : 'Role-Specific';
+                    return (
+                      <div key={type}>
+                        <h3 className="text-xs font-semibold text-primary mb-2">{label} ({items.length})</h3>
+                        <div className="space-y-2">
+                          {items.map((q: string, i: number) => (
+                            <p key={i} className="text-sm text-muted-foreground flex gap-2">
+                              <span className="text-primary font-medium shrink-0">{i + 1}.</span>
+                              {q}
+                            </p>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -289,14 +308,14 @@ export default function PrepStudio() {
                   onClick={handleStartMockInterview}
                   className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:brightness-110 transition-all glow-primary-sm"
                 >
-                  <Brain className="h-4 w-4" />
-                  Start Mock Interview (5 questions)
+                  {mode === 'video' ? <Video className="h-4 w-4" /> : <Brain className="h-4 w-4" />}
+                  Start {mode === 'video' ? 'Video' : 'Mock'} Interview (5 questions)
                 </button>
               </div>
             </motion.div>
           )}
 
-          {/* Mock interview */}
+          {/* Interview */}
           {state === 'interview' && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
               {/* Progress */}
@@ -312,53 +331,120 @@ export default function PrepStudio() {
                 ))}
               </div>
 
-              <div className="rounded-xl border border-border bg-card p-6">
-                <p className="text-xs text-muted-foreground mb-2">Question {currentQ + 1} of {interviewQuestions.length}</p>
-                <p className="text-base font-medium text-foreground leading-relaxed mb-4">
-                  {interviewQuestions[currentQ]}
-                </p>
+              {mode === 'video' ? (
+                /* Video Interview Layout */
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Left: Video */}
+                  <div>
+                    <VideoInterviewer
+                      questionText={interviewQuestions[currentQ]}
+                      role={selectedApp.role}
+                      company={selectedApp.company}
+                      onSpeechEnd={() => setSpeechDone(true)}
+                      isActive={state === 'interview'}
+                    />
+                  </div>
 
-                <textarea
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                  rows={6}
-                  placeholder="Type your answer here... Use the STAR method: Situation, Task, Action, Result"
-                  className="w-full rounded-lg border border-border bg-input px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-                />
+                  {/* Right: Answer */}
+                  <div className="space-y-4">
+                    <div className="rounded-xl border border-border bg-card p-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs text-muted-foreground">Question {currentQ + 1} of {interviewQuestions.length}</p>
+                        {speechDone && (
+                          <span className="text-[10px] text-success font-medium flex items-center gap-1">
+                            <CheckCircle2 className="h-3 w-3" /> Ready for your answer
+                          </span>
+                        )}
+                      </div>
 
-                <div className="flex items-center justify-between mt-3">
-                  <p className="text-[10px] text-muted-foreground">Scoring is based on STAR + role alignment. Add specifics to improve.</p>
-                  <button
-                    onClick={handleSubmitAnswer}
-                    disabled={!answer.trim() || loadingFeedback}
-                    className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loadingFeedback ? (
-                      <><Loader2 className="h-4 w-4 animate-spin" /> Analyzing...</>
-                    ) : (
-                      <><ArrowRight className="h-4 w-4" /> Submit & Get Feedback</>
+                      <p className="text-sm font-medium text-foreground leading-relaxed mb-4">
+                        {interviewQuestions[currentQ]}
+                      </p>
+
+                      <textarea
+                        value={answer}
+                        onChange={(e) => setAnswer(e.target.value)}
+                        rows={5}
+                        placeholder="Type your answer... Use the STAR method: Situation, Task, Action, Result"
+                        className="w-full rounded-lg border border-border bg-input px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                      />
+
+                      <div className="flex items-center justify-between mt-3">
+                        <p className="text-[10px] text-muted-foreground">STAR + role alignment scoring</p>
+                        <button
+                          onClick={handleSubmitAnswer}
+                          disabled={!answer.trim() || loadingFeedback}
+                          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {loadingFeedback ? (
+                            <><Loader2 className="h-4 w-4 animate-spin" /> Analyzing...</>
+                          ) : (
+                            <><ArrowRight className="h-4 w-4" /> Submit</>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Loading skeleton */}
+                    {loadingFeedback && (
+                      <div className="rounded-xl border border-border bg-card/50 p-5 space-y-3 animate-pulse">
+                        <div className="h-3 w-1/3 rounded bg-muted" />
+                        <div className="h-2 w-full rounded bg-muted" />
+                        <div className="h-2 w-4/5 rounded bg-muted" />
+                      </div>
                     )}
-                  </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                /* Text Interview Layout */
+                <div className="space-y-6">
+                  <div className="rounded-xl border border-border bg-card p-6">
+                    <p className="text-xs text-muted-foreground mb-2">Question {currentQ + 1} of {interviewQuestions.length}</p>
+                    <p className="text-base font-medium text-foreground leading-relaxed mb-4">
+                      {interviewQuestions[currentQ]}
+                    </p>
 
-              {/* Loading skeleton */}
-              {loadingFeedback && (
-                <div className="rounded-xl border border-border bg-card/50 p-5 space-y-3 animate-pulse">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-muted" />
-                    <div className="space-y-2 flex-1">
-                      <div className="h-3 w-1/3 rounded bg-muted" />
-                      <div className="h-2 w-1/2 rounded bg-muted" />
+                    <textarea
+                      value={answer}
+                      onChange={(e) => setAnswer(e.target.value)}
+                      rows={6}
+                      placeholder="Type your answer here... Use the STAR method: Situation, Task, Action, Result"
+                      className="w-full rounded-lg border border-border bg-input px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                    />
+
+                    <div className="flex items-center justify-between mt-3">
+                      <p className="text-[10px] text-muted-foreground">Scoring is based on STAR + role alignment. Add specifics to improve.</p>
+                      <button
+                        onClick={handleSubmitAnswer}
+                        disabled={!answer.trim() || loadingFeedback}
+                        className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loadingFeedback ? (
+                          <><Loader2 className="h-4 w-4 animate-spin" /> Analyzing...</>
+                        ) : (
+                          <><ArrowRight className="h-4 w-4" /> Submit & Get Feedback</>
+                        )}
+                      </button>
                     </div>
                   </div>
-                  <div className="h-2 w-full rounded bg-muted" />
-                  <div className="h-2 w-4/5 rounded bg-muted" />
-                  <div className="h-2 w-3/5 rounded bg-muted" />
+
+                  {loadingFeedback && (
+                    <div className="rounded-xl border border-border bg-card/50 p-5 space-y-3 animate-pulse">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-full bg-muted" />
+                        <div className="space-y-2 flex-1">
+                          <div className="h-3 w-1/3 rounded bg-muted" />
+                          <div className="h-2 w-1/2 rounded bg-muted" />
+                        </div>
+                      </div>
+                      <div className="h-2 w-full rounded bg-muted" />
+                      <div className="h-2 w-4/5 rounded bg-muted" />
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Previous feedback */}
+              {/* Previous feedback (both modes) */}
               {feedback.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="text-sm font-semibold text-foreground">Previous Feedback</h3>
@@ -373,9 +459,10 @@ export default function PrepStudio() {
           {/* Summary */}
           {state === 'summary' && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-              {/* Confidence meter */}
               <div className="rounded-xl border border-border bg-card p-8 text-center">
-                <h2 className="text-lg font-bold text-foreground mb-2">Mock Interview Complete</h2>
+                <h2 className="text-lg font-bold text-foreground mb-2">
+                  {mode === 'video' ? 'Video ' : 'Mock '}Interview Complete
+                </h2>
                 <p className="text-sm text-muted-foreground mb-6">{selectedApp.role} at {selectedApp.company}</p>
 
                 <div className="relative inline-flex items-center justify-center mb-4">
@@ -398,7 +485,6 @@ export default function PrepStudio() {
                 <p className="text-sm text-muted-foreground">Overall Score</p>
               </div>
 
-              {/* Detailed feedback */}
               <div className="space-y-4">
                 {feedback.map((f, i) => (
                   <FeedbackCard key={i} fb={f} index={i} onCopy={() => handleCopyAnswer(i)} copied={copiedIdx === i} />
@@ -419,7 +505,6 @@ export default function PrepStudio() {
   );
 }
 
-// Feedback card component
 function FeedbackCard({ fb, index, compact, onCopy, copied }: { fb: InterviewFeedback; index: number; compact?: boolean; onCopy: () => void; copied: boolean }) {
   const rb = fb.rubricBreakdown;
 
@@ -440,7 +525,6 @@ function FeedbackCard({ fb, index, compact, onCopy, copied }: { fb: InterviewFee
         </div>
       )}
 
-      {/* Rubric breakdown */}
       <div className="grid grid-cols-5 gap-2">
         <RubricBar label="Relevance" score={rb.relevance} max={25} />
         <RubricBar label="STAR" score={rb.star} max={25} />
@@ -449,7 +533,6 @@ function FeedbackCard({ fb, index, compact, onCopy, copied }: { fb: InterviewFee
         <RubricBar label="Clarity" score={rb.clarity} max={10} />
       </div>
 
-      {/* STAR missing chips */}
       {fb.starAnalysis.missing.length > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap">
           <AlertCircle className="h-3 w-3 text-warning shrink-0" />
