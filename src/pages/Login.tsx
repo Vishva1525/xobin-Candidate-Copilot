@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { lovable } from '@/integrations/lovable/index';
 import { supabase } from '@/integrations/supabase/client';
-import { Plane, ArrowRight, Brain, Compass, Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { ArrowRight, Brain, Compass, Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
+import xobinLogo from '@/assets/xobin-logo.png';
 import { motion } from 'framer-motion';
 
 const container = {
@@ -123,11 +124,11 @@ export default function Login() {
         {/* Logo */}
         <motion.div variants={item} className="flex items-center gap-2.5">
           <motion.div
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary glow-primary-sm"
+            className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden"
             animate={{ rotate: [0, -5, 5, 0] }}
             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <Plane className="h-5 w-5 text-primary-foreground" />
+            <img src={xobinLogo} alt="xobin" className="h-10 w-10 object-contain" />
           </motion.div>
           <span className="text-lg font-semibold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
             xobin
@@ -196,11 +197,11 @@ export default function Login() {
               className="text-center mb-8"
             >
               <motion.div
-                className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary glow-primary"
+                className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl overflow-hidden"
                 animate={{ rotate: [0, -3, 3, 0] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
               >
-                <Plane className="h-7 w-7 text-primary-foreground" />
+                <img src={xobinLogo} alt="xobin" className="h-14 w-14 object-contain" />
               </motion.div>
               <h2
                 className="text-xl font-bold text-foreground"

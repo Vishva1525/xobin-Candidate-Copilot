@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import xobinLogo from '@/assets/xobin-logo.png';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -20,8 +21,8 @@ export function Sidebar() {
     <aside className="flex w-64 flex-col border-r border-sidebar-border bg-sidebar">
       {/* Brand */}
       <div className="flex items-center gap-2.5 px-6 py-5 border-b border-sidebar-border">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-          <span className="text-sm font-bold text-primary">X</span>
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden">
+          <img src={xobinLogo} alt="xobin" className="h-8 w-8 object-contain" />
         </div>
         <div>
           <span className="text-base font-semibold text-foreground tracking-tight">xobin</span>
