@@ -14,6 +14,174 @@ export type Database = {
   }
   public: {
     Tables: {
+      applications: {
+        Row: {
+          assessment_score: number | null
+          created_at: string
+          id: string
+          interview_score: number | null
+          job_id: string
+          notes: string | null
+          resume_score: number | null
+          resume_url: string | null
+          stage: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          assessment_score?: number | null
+          created_at?: string
+          id?: string
+          interview_score?: number | null
+          job_id: string
+          notes?: string | null
+          resume_score?: number | null
+          resume_url?: string | null
+          stage?: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          assessment_score?: number | null
+          created_at?: string
+          id?: string
+          interview_score?: number | null
+          job_id?: string
+          notes?: string | null
+          resume_score?: number | null
+          resume_url?: string | null
+          stage?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      companies: {
+        Row: {
+          created_at: string
+          domain: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          domain?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      jobs: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          role_type: string
+          status: string
+          threshold_assessment: number | null
+          threshold_interview: number | null
+          threshold_resume: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          role_type?: string
+          status?: string
+          threshold_assessment?: number | null
+          threshold_interview?: number | null
+          threshold_resume?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          role_type?: string
+          status?: string
+          threshold_assessment?: number | null
+          threshold_interview?: number | null
+          threshold_resume?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          application_id: string
+          body: string
+          created_at: string
+          id: string
+          sender_id: string
+          sender_role: string
+        }
+        Insert: {
+          application_id: string
+          body: string
+          created_at?: string
+          id?: string
+          sender_id: string
+          sender_role: string
+        }
+        Update: {
+          application_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+          sender_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -40,6 +208,38 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      recruiter_profiles: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          title?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruiter_profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

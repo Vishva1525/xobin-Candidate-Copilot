@@ -13,6 +13,7 @@ import ApplicationDetail from "./pages/ApplicationDetail";
 import ResumeLab from "./pages/ResumeLab";
 import PrepStudio from "./pages/PrepStudio";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
+import JobPipeline from "./pages/JobPipeline";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/resume-lab" element={<ProtectedRoute allowedRoles={['student']}><ResumeLab /></ProtectedRoute>} />
               <Route path="/prep-studio" element={<ProtectedRoute allowedRoles={['student']}><PrepStudio /></ProtectedRoute>} />
               <Route path="/recruiter" element={<ProtectedRoute allowedRoles={['recruiter']}><RecruiterDashboard /></ProtectedRoute>} />
+              <Route path="/recruiter/job/:id" element={<ProtectedRoute allowedRoles={['recruiter', 'admin']}><JobPipeline /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="*" element={<NotFound />} />
