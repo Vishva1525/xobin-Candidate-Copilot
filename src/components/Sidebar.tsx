@@ -1,0 +1,66 @@
+import { Link, useLocation } from 'react-router-dom';
+import { LayoutDashboard, FileText, Brain, LogOut, Sparkles } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { cn } from '@/lib/utils';
+
+const navItems = [
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/resume-lab', label: 'Resume Lab', icon: FileText },
+  { to: '/prep-studio', label: 'Prep Studio', icon: Brain },
+];
+
+export function Sidebar() {
+  const location = useLocation();
+  const { email, logout } = useAuth();
+
+  return (
+    <aside className="flex w-64 flex-col border-r border-sidebar-border bg-sidebar">
+      {/* Brand */}
+      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-sidebar-border">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+          <Sparkles className="h-4 w-4 text-primary" />
+        </div>
+        <span className="text-base font-semibold text-foreground tracking-tight">Candidate OS</span>
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 px-3 py-4 space-y-1">
+        {navItems.map(item => {
+          const active = location.pathname.startsWith(item.to);
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150',
+                active
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground glow-primary-sm'
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+              )}
+            >
+              <item.icon className={cn('h-4 w-4', active && 'text-primary')} />
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* User */}
+      <div className="border-t border-sidebar-border px-4 py-4">
+        <div className="flex items-center justify-between">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-sidebar-accent-foreground">{email}</p>
+            <p className="text-xs text-muted-foreground">Demo Mode</p>
+          </div>
+          <button
+            onClick={logout}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
+            title="Sign out"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </aside>
+  );
+}
