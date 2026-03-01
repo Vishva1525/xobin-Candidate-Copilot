@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
 import { AIActionButton } from '@/components/AIActionButton';
 import { ResumeHealthCard } from '@/components/ResumeHealthCard';
@@ -7,17 +7,15 @@ import { mockApplications, sampleResumeText } from '@/lib/mock-data';
 import { callAI } from '@/lib/ai-service';
 import { extractTextFromFile } from '@/lib/resume-parser';
 import { ResumeSections, ResumeHealth, TailoredDraft } from '@/lib/types';
-import { motion } from 'framer-motion';
-import { Upload, FileText, Sparkles, Copy, Check, ClipboardPaste, Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Upload, FileText, Sparkles, Copy, Check, ClipboardPaste, Loader2, AlertTriangle, CheckCircle2, Briefcase } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 function parseResumeSections(text: string): ResumeSections {
   const lines = text.split('\n').filter(l => l.trim());
   
-  // Extract name: use first line but truncate at common delimiters
   const rawName = lines[0] || 'Unknown';
-  // Take only the first meaningful segment (before pipe, comma after name, or excessive length)
   const name = rawName.split(/[|,]/)
     .map(s => s.trim())
     .find(s => s.length > 1 && s.length < 60 && !s.includes('@') && !s.match(/\d{5,}/)) || rawName.slice(0, 50);
@@ -45,7 +43,6 @@ function parseResumeSections(text: string): ResumeSections {
   for (const line of lines) {
     const upper = line.toUpperCase().trim().replace(/[:\-–—]/g, '').trim();
     
-    // Check for section headers
     const matchedSection = sectionHeaders.find(sh => sh.keys.some(k => upper === k || upper.startsWith(k + ' ')));
     if (matchedSection) {
       if (currentExp && section === 'experience') { experience.push(currentExp); currentExp = null; }
@@ -54,7 +51,6 @@ function parseResumeSections(text: string): ResumeSections {
     }
 
     if (section === 'skills' && line.trim()) {
-      // Handle "Category: skill1, skill2" format
       const colonIdx = line.indexOf(':');
       const skillText = colonIdx > 0 && colonIdx < 40 ? line.slice(colonIdx + 1) : line;
       skills.push(...skillText.split(/[,;•·|]/).map(s => s.trim()).filter(s => s.length > 1 && s.length < 60));
@@ -67,7 +63,6 @@ function parseResumeSections(text: string): ResumeSections {
       } else if ((line.startsWith('•') || line.startsWith('-') || line.startsWith('*') || line.startsWith('●')) && currentExp) {
         currentExp.bullets.push(line.replace(/^[•\-*●]\s*/, '').trim());
       } else if (currentExp && line.trim().length > 10 && !line.match(/^[A-Z\s]{5,}$/)) {
-        // Treat as continuation bullet if it looks like content
         currentExp.bullets.push(line.trim());
       }
     }
@@ -82,7 +77,6 @@ function parseResumeSections(text: string): ResumeSections {
   }
   if (currentExp) experience.push(currentExp);
 
-  // Fallback: if no skills found by section parsing, extract known tech skills from full text
   if (skills.length === 0) {
     const allText = text.toUpperCase();
     const knownSkills = [
@@ -111,22 +105,51 @@ function parseResumeSections(text: string): ResumeSections {
   };
 }
 
+interface StoredDraft {
+  draft: TailoredDraft;
+  generatedAt: string;
+}
+
 export default function ResumeLab() {
   const [resumeText, setResumeText] = useLocalStorage<string>('candidateos_resume', '');
   const [resumeSections, setResumeSections] = useLocalStorage<ResumeSections | null>('candidateos_sections', null);
   const [resumeHealth, setResumeHealth] = useLocalStorage<ResumeHealth | null>('candidateos_health', null);
-  const [tailoredDraft, setTailoredDraft] = useState<TailoredDraft | null>(null);
-  const [selectedAppId, setSelectedAppId] = useState(mockApplications[0].id);
+  const [tailoredDraftsByAppId, setTailoredDraftsByAppId] = useLocalStorage<Record<string, StoredDraft>>('candidateos_drafts_by_app', {});
+  const [selectedAppId, setSelectedAppId] = useLocalStorage<string>('candidateos_selected_app', mockApplications[0].id);
   const [showPaste, setShowPaste] = useState(false);
   const [copied, setCopied] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [extractionError, setExtractionError] = useState<string | null>(null);
+  // Key to force-reset AIActionButton when role changes
+  const [actionKey, setActionKey] = useState(0);
+
+  const selectedApp = useMemo(
+    () => mockApplications.find(a => a.id === selectedAppId) || mockApplications[0],
+    [selectedAppId]
+  );
+
+  const currentDraftEntry = tailoredDraftsByAppId[selectedAppId] || null;
+  const tailoredDraft = currentDraftEntry?.draft || null;
+
+  // When role changes, reset action button state and show toast
+  const handleAppChange = useCallback((newAppId: string) => {
+    if (newAppId === selectedAppId) return;
+    const app = mockApplications.find(a => a.id === newAppId);
+    setSelectedAppId(newAppId);
+    setActionKey(prev => prev + 1); // reset AIActionButton
+    if (app) {
+      toast(`Context switched to ${app.role} at ${app.company}`, {
+        icon: <Briefcase className="h-4 w-4" />,
+        duration: 2500,
+      });
+    }
+  }, [selectedAppId, setSelectedAppId]);
 
   const processResume = useCallback(async (text: string) => {
     setResumeText(text);
     const sections = parseResumeSections(text);
     setResumeSections(sections);
-    const result = await callAI('parse_resume_feedback', { text });
+    const result = await callAI('parse_resume_feedback', { resumeText: text });
     setResumeHealth(result.health);
     toast.success('Resume parsed successfully');
   }, [setResumeText, setResumeSections, setResumeHealth]);
@@ -134,10 +157,8 @@ export default function ResumeLab() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
     setExtracting(true);
     setExtractionError(null);
-    
     try {
       const text = await extractTextFromFile(file);
       if (text.trim().length > 20) {
@@ -213,7 +234,6 @@ export default function ResumeLab() {
                   <input type="file" accept=".pdf,.docx,.doc,.txt" onChange={handleFileUpload} className="hidden" disabled={extracting} />
                 </label>
 
-                {/* Extraction error */}
                 {extractionError && (
                   <div className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 flex items-start gap-2">
                     <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
@@ -327,7 +347,7 @@ export default function ResumeLab() {
 
                     {/* Reset */}
                     <button
-                      onClick={() => { setResumeText(''); setResumeSections(null); setResumeHealth(null); setTailoredDraft(null); }}
+                      onClick={() => { setResumeText(''); setResumeSections(null); setResumeHealth(null); setTailoredDraftsByAppId({}); }}
                       className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                     >
                       Upload a different resume
@@ -335,58 +355,80 @@ export default function ResumeLab() {
                   </motion.div>
                 )}
 
-                {/* Tailored Draft */}
-                {tailoredDraft && (
+                {/* Tailored Draft — per role */}
+                <AnimatePresence mode="wait">
                   <motion.div
-                    initial={{ opacity: 0, y: 12 }}
+                    key={selectedAppId}
+                    initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="rounded-xl border border-primary/20 bg-primary/5 p-6 space-y-4"
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.25 }}
                   >
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-foreground">Tailored Resume Draft</h3>
-                      <button
-                        onClick={handleCopyDraft}
-                        className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:brightness-110 transition-all"
-                      >
-                        {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                        {copied ? 'Copied!' : 'Copy draft'}
-                      </button>
-                    </div>
-
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-1">Professional Summary</p>
-                      <p className="text-sm text-foreground leading-relaxed">{tailoredDraft.summary}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-2">Improved Bullets</p>
-                      <div className="space-y-3">
-                        {tailoredDraft.bullets.map((b, i) => (
-                          <div key={i} className="space-y-1">
-                            <p className="text-xs text-muted-foreground line-through">{b.original}</p>
-                            <p className="text-xs text-foreground">→ {b.improved}</p>
+                    {tailoredDraft ? (
+                      <div className="rounded-xl border border-primary/20 bg-primary/5 p-6 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="text-sm font-semibold text-foreground">Tailored Resume Draft</h3>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                              For {selectedApp.role} at {selectedApp.company}
+                              {currentDraftEntry?.generatedAt && (
+                                <> · Generated {new Date(currentDraftEntry.generatedAt).toLocaleString()}</>
+                              )}
+                            </p>
                           </div>
-                        ))}
-                      </div>
-                    </div>
+                          <button
+                            onClick={handleCopyDraft}
+                            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:brightness-110 transition-all"
+                          >
+                            {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                            {copied ? 'Copied!' : 'Copy draft'}
+                          </button>
+                        </div>
 
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-1.5">Suggested Keywords</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {tailoredDraft.suggestedKeywords.map((kw, i) => (
-                          <span key={i} className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                            {kw}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Professional Summary</p>
+                          <p className="text-sm text-foreground leading-relaxed">{tailoredDraft.summary}</p>
+                        </div>
 
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs text-muted-foreground">ATS Keyword Match</p>
-                      <span className="text-lg font-bold text-success">{tailoredDraft.atsMatchPercentage}%</span>
-                    </div>
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-2">Improved Bullets</p>
+                          <div className="space-y-3">
+                            {tailoredDraft.bullets.map((b, i) => (
+                              <div key={i} className="space-y-1">
+                                <p className="text-xs text-muted-foreground line-through">{b.original}</p>
+                                <p className="text-xs text-foreground">→ {b.improved}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-1.5">Suggested Keywords</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {tailoredDraft.suggestedKeywords.map((kw, i) => (
+                              <span key={i} className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                                {kw}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs text-muted-foreground">ATS Keyword Match</p>
+                          <span className="text-lg font-bold text-success">{tailoredDraft.atsMatchPercentage}%</span>
+                        </div>
+                      </div>
+                    ) : hasResume ? (
+                      <div className="rounded-xl border border-dashed border-border bg-card/50 p-6 text-center">
+                        <Sparkles className="h-5 w-5 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">
+                          No tailored draft yet for <span className="font-medium text-foreground">{selectedApp.role}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">Use the "Tailor my resume" action on the right →</p>
+                      </div>
+                    ) : null}
                   </motion.div>
-                )}
+                </AnimatePresence>
               </div>
             )}
           </motion.div>
@@ -400,7 +442,10 @@ export default function ResumeLab() {
           </div>
 
           {!hasResume ? (
-            <p className="text-xs text-muted-foreground">Upload your resume to unlock AI actions.</p>
+            <div className="rounded-lg border border-dashed border-border bg-card/50 p-4 text-center">
+              <Upload className="h-5 w-5 text-muted-foreground mx-auto mb-2" />
+              <p className="text-xs text-muted-foreground">Upload or paste your resume first to unlock AI actions.</p>
+            </div>
           ) : (
             <div className="space-y-4">
               {/* Application selector */}
@@ -408,7 +453,7 @@ export default function ResumeLab() {
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Target application</label>
                 <select
                   value={selectedAppId}
-                  onChange={(e) => setSelectedAppId(e.target.value)}
+                  onChange={(e) => handleAppChange(e.target.value)}
                   className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
                 >
                   {mockApplications.map(app => (
@@ -417,17 +462,45 @@ export default function ResumeLab() {
                 </select>
               </div>
 
+              {/* Context banner */}
+              <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
+                <div className="flex items-center gap-2">
+                  <Briefcase className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-foreground truncate">Tailoring for: {selectedApp.role}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">at {selectedApp.company}</p>
+                  </div>
+                </div>
+              </div>
+
               {resumeHealth && <ResumeHealthCard health={resumeHealth} />}
 
               <AIActionButton
+                key={actionKey}
                 label="Tailor my resume for this role"
-                description="Get a rewritten summary, improved bullets, and keyword match"
+                description={`Generate a draft tailored for ${selectedApp.role}`}
                 onClick={async () => {
+                  // Capture current values at click time
+                  const appId = selectedAppId;
+                  const app = mockApplications.find(a => a.id === appId);
+                  if (!app) throw new Error('No application selected');
+
                   const result = await callAI('tailor_resume_to_jd', {
                     resumeText,
-                    jd: mockApplications.find(a => a.id === selectedAppId)?.jobDescription,
+                    jd: app.jobDescription,
+                    roleTitle: app.role,
+                    company: app.company,
                   });
-                  setTailoredDraft(result);
+
+                  // Store per-role
+                  setTailoredDraftsByAppId(prev => ({
+                    ...prev,
+                    [appId]: {
+                      draft: result,
+                      generatedAt: new Date().toISOString(),
+                    },
+                  }));
+
                   return result;
                 }}
               >
@@ -439,6 +512,12 @@ export default function ResumeLab() {
                 )}
               </AIActionButton>
 
+              {/* Show count of saved drafts */}
+              {Object.keys(tailoredDraftsByAppId).length > 0 && (
+                <p className="text-[10px] text-muted-foreground text-center">
+                  {Object.keys(tailoredDraftsByAppId).length} role{Object.keys(tailoredDraftsByAppId).length > 1 ? 's' : ''} tailored
+                </p>
+              )}
             </div>
           )}
         </div>
