@@ -58,7 +58,7 @@ export function ExploreRolesModal({ open, onClose }: Props) {
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-6 py-4">
             <div>
-              <h2 className="text-lg font-bold text-foreground">Explore Other Roles at Xobin</h2>
+              <h2 className="text-lg font-bold text-foreground">Explore Other Roles at xobin</h2>
               <p className="text-xs text-muted-foreground mt-0.5">Browse roles and tailor your resume instantly.</p>
             </div>
             <button onClick={onClose} className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">

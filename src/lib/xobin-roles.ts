@@ -1,4 +1,4 @@
-// Simulated roles at Xobin for the "Explore Other Roles" feature
+// Simulated roles at xobin for the "Explore Other Roles" feature
 
 export interface XobinRole {
   id: string;
@@ -21,7 +21,7 @@ export const xobinRoles: XobinRole[] = [
     keySkills: ['React', 'TypeScript', 'Node.js'],
     createdAt: '2026-01-15T00:00:00Z',
     jdFull: `About the Role
-We're looking for a Software Development Engineer to join our engineering team at Xobin. You'll build and enhance our AI-powered talent assessment platform used by 800+ companies worldwide.
+We're looking for a Software Development Engineer to join our engineering team at xobin. You'll build and enhance our AI-powered talent assessment platform used by 800+ companies worldwide.
 
 Responsibilities
 • Design and implement scalable backend services and APIs for the assessment platform
@@ -54,7 +54,7 @@ Nice to Have
     keySkills: ['React', 'Next.js', 'Tailwind CSS'],
     createdAt: '2026-02-01T00:00:00Z',
     jdFull: `About the Role
-Join Xobin's frontend team to build beautiful, accessible, and high-performance interfaces for our AI-powered assessment platform. You'll work closely with designers and backend engineers to ship pixel-perfect features.
+Join xobin's frontend team to build beautiful, accessible, and high-performance interfaces for our AI-powered assessment platform. You'll work closely with designers and backend engineers to ship pixel-perfect features.
 
 Responsibilities
 • Build responsive, accessible UI components using React and Next.js
@@ -85,7 +85,7 @@ Nice to Have
     keySkills: ['SQL', 'Python', 'Tableau'],
     createdAt: '2026-02-10T00:00:00Z',
     jdFull: `About the Role
-We're looking for a Data Analyst Intern to help Xobin's product and customer success teams make data-driven decisions. You'll analyze assessment data, build dashboards, and surface insights that shape the product roadmap.
+We're looking for a Data Analyst Intern to help xobin's product and customer success teams make data-driven decisions. You'll analyze assessment data, build dashboards, and surface insights that shape the product roadmap.
 
 Responsibilities
 • Write complex SQL queries to extract and transform assessment & hiring data
@@ -116,7 +116,7 @@ Nice to Have
     keySkills: ['Figma', 'User Research', 'Prototyping'],
     createdAt: '2026-02-15T00:00:00Z',
     jdFull: `About the Role
-Join Xobin as a Product Designer Intern and shape the experience of thousands of candidates and recruiters who use our platform daily. You'll own end-to-end design for key product flows.
+Join xobin as a Product Designer Intern and shape the experience of thousands of candidates and recruiters who use our platform daily. You'll own end-to-end design for key product flows.
 
 Responsibilities
 • Design end-to-end user flows for candidate assessment experiences

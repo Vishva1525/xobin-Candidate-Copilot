@@ -118,7 +118,7 @@ export default function Dashboard() {
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h1 className="text-2xl font-bold text-foreground tracking-tight">
-                    Your Xobin Application
+                    Your xobin Application
                   </h1>
                   <p className="text-sm text-muted-foreground mt-1">
                     Role: <span className="font-medium text-foreground">{app.role}</span>
@@ -276,7 +276,7 @@ export default function Dashboard() {
                     <p className="text-xs text-foreground leading-relaxed">{insights.stageSummary}</p>
                   </div>
                   <div className="rounded-lg bg-secondary/50 p-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">What Xobin is Doing Now</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">What xobin is Doing Now</p>
                     <p className="text-xs text-foreground leading-relaxed">{insights.companyBackground}</p>
                   </div>
                   <div className="rounded-lg bg-secondary/50 p-3">
@@ -300,7 +300,7 @@ export default function Dashboard() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <Compass className="h-4 w-4 text-primary" />
-                    <h2 className="text-sm font-semibold text-card-foreground">Explore Other Roles at Xobin</h2>
+                    <h2 className="text-sm font-semibold text-card-foreground">Explore Other Roles at xobin</h2>
                   </div>
                   <p className="text-xs text-muted-foreground">Curious about a better fit? Explore roles and tailor your resume instantly.</p>
                 </div>
