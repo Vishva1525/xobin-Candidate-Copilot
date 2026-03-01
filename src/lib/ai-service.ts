@@ -8,7 +8,8 @@ type AITask =
   | 'generate_interview_questions'
   | 'mock_interview_feedback'
   | 'interviewer_turn'
-  | 'stage_explainer';
+  | 'stage_explainer'
+  | 'draft_follow_up_email';
 
 export async function callAI(task: AITask, payload: Record<string, any>): Promise<any> {
   try {
@@ -82,6 +83,10 @@ function getFallbackResponse(task: AITask, payload: Record<string, any>): any {
         whatToExpect: 'You may receive an assessment or interview invitation.',
         typicalTimeline: '3-7 business days.',
         tips: ['Prepare thoroughly', 'Research the company', 'Practice common questions'],
+      };
+    case 'draft_follow_up_email':
+      return {
+        email: `Subject: Following Up — ${payload.role || 'Application'} at ${payload.company || 'Company'}\n\nDear Hiring Team,\n\nI hope this message finds you well. I wanted to follow up on my application for the ${payload.role || 'position'} role. I remain very enthusiastic about the opportunity and would love to learn about any updates regarding the process.\n\nPlease don't hesitate to reach out if you need any additional information from my end.\n\nBest regards`,
       };
     default:
       return { error: 'Unknown task' };

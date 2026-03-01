@@ -131,6 +131,26 @@ Return a JSON object with this exact structure:
 
 Score each dimension 0-100. Be honest. Return ONLY valid JSON, no markdown.`;
 
+    case 'draft_follow_up_email':
+      return `You are a career coach helping a candidate write a professional follow-up email.
+
+Role: ${payload.role || 'the position'}
+Company: ${payload.company || 'the company'}
+Current Stage: ${payload.stage || 'screening'}
+
+Write a concise, professional follow-up email that:
+- Is warm but not desperate
+- References the specific role
+- Shows continued interest
+- Is appropriate for the current hiring stage
+
+Return a JSON object:
+{
+  "email": "Subject: ...\\n\\nDear ...\\n\\n..."
+}
+
+Return ONLY valid JSON, no markdown.`;
+
     default:
       return `Return: {"error": "Unknown task: ${task}"}`;
   }

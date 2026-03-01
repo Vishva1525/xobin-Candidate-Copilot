@@ -1,17 +1,28 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
-import { TimelineStepper } from '@/components/TimelineStepper';
+import { UnifiedTimeline } from '@/components/UnifiedTimeline';
+import { FollowUpEmailModal } from '@/components/FollowUpEmailModal';
 import { AIActionButton } from '@/components/AIActionButton';
 import { RecruiterChat } from '@/components/RecruiterChat';
 import { mockApplications, getStageInfo } from '@/lib/mock-data';
 import { callAI } from '@/lib/ai-service';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, Calendar, MessageSquare, Sparkles, Clock, Lightbulb } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, MessageSquare, Sparkles, Eye, Clock, User, Activity, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+function formatTimeAgo(isoDate: string) {
+  const diff = Date.now() - new Date(isoDate).getTime();
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  return `${days} days ago`;
+}
 
 export default function ApplicationDetail() {
   const { id } = useParams<{ id: string }>();
   const app = mockApplications.find(a => a.id === id);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
 
   if (!app) {
     return (
@@ -55,35 +66,57 @@ export default function ApplicationDetail() {
               </div>
             </div>
 
-            {/* Timeline */}
-            <div className="rounded-xl border border-border bg-card p-6 mb-6">
-              <h2 className="text-sm font-semibold text-card-foreground mb-4">Application Progress</h2>
-              <TimelineStepper steps={app.timeline} size="lg" />
+            {/* Trust & Transparency Widgets */}
+            <div className="grid grid-cols-3 gap-3 mb-6">
+              <div className="rounded-xl border border-border bg-card p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-info/15">
+                    <User className="h-3.5 w-3.5 text-info" />
+                  </div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Your Handler</span>
+                </div>
+                <p className="text-sm font-medium text-foreground">{app.handlerRole || 'Recruiting Coordinator'}</p>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-success/15">
+                    <Activity className="h-3.5 w-3.5 text-success" />
+                  </div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Last Activity</span>
+                </div>
+                <p className="text-sm font-medium text-foreground">
+                  {app.lastActivityAt ? formatTimeAgo(app.lastActivityAt) : 'Unknown'}
+                </p>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-warning/15">
+                    <Shield className="h-3.5 w-3.5 text-warning" />
+                  </div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Response SLA</span>
+                </div>
+                <p className="text-sm font-medium text-foreground">
+                  ~{app.typicalResponseDays || 5} business days
+                </p>
+              </div>
             </div>
 
-            {/* Stage Info */}
+            {/* Unified Application Timeline */}
             <div className="rounded-xl border border-border bg-card p-6 mb-6">
-              <div className="flex items-center gap-2 mb-3">
-                <Lightbulb className="h-4 w-4 text-warning" />
-                <h2 className="text-sm font-semibold text-card-foreground">What this stage means</h2>
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Eye className="h-4 w-4 text-primary" />
+                  <h2 className="text-sm font-semibold text-card-foreground">Application Timeline</h2>
+                </div>
+                <p className="text-xs text-muted-foreground">Full visibility into what's happening and what to do next.</p>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-3">{stageInfo.meaning}</p>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4">
-                <Clock className="h-3.5 w-3.5" />
-                {stageInfo.timeline}
-              </div>
-
-              <div>
-                <h3 className="text-xs font-semibold text-card-foreground mb-2">What you can do now</h3>
-                <ul className="space-y-1.5">
-                  {stageInfo.tips.map((tip, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
-                      <span className="mt-1 h-1 w-1 rounded-full bg-primary shrink-0" />
-                      {tip}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {app.stageTimeline && (
+                <UnifiedTimeline
+                  stages={app.stageTimeline}
+                  applicationId={app.id}
+                  onDraftEmail={() => setEmailModalOpen(true)}
+                />
+              )}
             </div>
 
             {/* Deadlines */}
@@ -145,10 +178,10 @@ export default function ApplicationDetail() {
             >
               {(result) => (
                 <div className="space-y-2">
-                  {result.behavioral.slice(0, 3).map((q: string, i: number) => (
+                  {result.behavioral?.slice(0, 3).map((q: string, i: number) => (
                     <p key={i} className="text-xs text-muted-foreground">• {q}</p>
                   ))}
-                  <p className="text-xs text-primary">+{result.behavioral.length + result.technical.length - 3} more</p>
+                  <p className="text-xs text-primary">+{(result.behavioral?.length || 0) + (result.technical?.length || 0) - 3} more</p>
                 </div>
               )}
             </AIActionButton>
@@ -163,7 +196,7 @@ export default function ApplicationDetail() {
                 <div className="space-y-2">
                   <p className="text-xs text-foreground leading-relaxed">{result.whatToExpect}</p>
                   <div className="space-y-1">
-                    {result.tips.map((tip: string, i: number) => (
+                    {result.tips?.map((tip: string, i: number) => (
                       <p key={i} className="text-xs text-muted-foreground">• {tip}</p>
                     ))}
                   </div>
@@ -173,6 +206,14 @@ export default function ApplicationDetail() {
           </div>
         </div>
       </div>
+
+      <FollowUpEmailModal
+        open={emailModalOpen}
+        onClose={() => setEmailModalOpen(false)}
+        role={app.role}
+        company={app.company}
+        stage={app.stage}
+      />
 
       <RecruiterChat
         role={app.role}
