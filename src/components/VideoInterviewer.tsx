@@ -56,9 +56,9 @@ export const VideoInterviewer = forwardRef<VideoInterviewerHandle, VideoIntervie
 
         const voices = window.speechSynthesis.getVoices();
         const preferred = voices.find(v =>
-          v.name.includes('Samantha') || v.name.includes('Google UK English Female') ||
-          v.name.includes('Microsoft Zira') || v.name.includes('Karen') ||
-          (v.lang.startsWith('en') && v.name.toLowerCase().includes('female'))
+          v.name.includes('Daniel') || v.name.includes('Google UK English Male') ||
+          v.name.includes('Microsoft David') || v.name.includes('Alex') ||
+          (v.lang.startsWith('en') && v.name.toLowerCase().includes('male'))
         ) || voices.find(v => v.lang.startsWith('en')) || voices[0];
 
         if (preferred) utterance.voice = preferred;
