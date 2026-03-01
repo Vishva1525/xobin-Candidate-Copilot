@@ -69,7 +69,7 @@ export function AICompanion({ role, company, stage, jobDescription, resumeText }
   }, [messages, isLoading, role, company, stage, jobDescription, resumeText]);
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div className="flex flex-col h-full rounded-xl border border-border bg-card overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2 px-5 py-3 border-b border-border bg-primary/5">
         <div className="h-7 w-7 rounded-full bg-primary/15 flex items-center justify-center">
@@ -82,7 +82,7 @@ export function AICompanion({ role, company, stage, jobDescription, resumeText }
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="max-h-[320px] overflow-y-auto p-4 space-y-3">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 && (
           <div className="space-y-3">
             <div className="flex gap-2">
