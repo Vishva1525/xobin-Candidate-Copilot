@@ -19,6 +19,130 @@ export async function callAI(task: AITask, payload: Record<string, any>): Promis
   return getDemoResponse(task, payload);
 }
 
+// ---- Answer analysis helpers for realistic scoring ----
+
+function analyzeAnswerQuality(answer: string, question: string) {
+  const wordCount = answer.trim().split(/\s+/).length;
+  const hasMetrics = /\d+%|\d+x|\$\d+|\d+\s*(users|customers|team|engineers|developers|projects|months|weeks|days|hours)/i.test(answer);
+  const hasSpecificExample = /at\s+\w+|when\s+I|my\s+team|our\s+team|I\s+led|I\s+built|I\s+designed|I\s+implemented/i.test(answer);
+  
+  // STAR detection
+  const hasSituation = /situation|context|background|at\s+\w+.*(?:we|our|the\s+team)|challenge|problem|issue/i.test(answer);
+  const hasTask = /task|responsible|needed\s+to|had\s+to|goal|objective|my\s+role/i.test(answer);
+  const hasAction = /I\s+(?:led|built|designed|implemented|created|developed|analyzed|collaborated|proposed|decided|chose|refactored|wrote|shipped|deployed)/i.test(answer);
+  const hasResult = /result|outcome|increased|decreased|improved|reduced|achieved|led\s+to|saved|generated|\d+%/i.test(answer);
+
+  const starParts = { situation: hasSituation, task: hasTask, action: hasAction, result: hasResult };
+  const starCount = [hasSituation, hasTask, hasAction, hasResult].filter(Boolean).length;
+
+  // Relevance: does answer relate to the question keywords?
+  const questionWords = question.toLowerCase().split(/\s+/).filter(w => w.length > 4);
+  const answerLower = answer.toLowerCase();
+  const relevantWords = questionWords.filter(w => answerLower.includes(w));
+  const relevanceRatio = questionWords.length > 0 ? relevantWords.length / questionWords.length : 0;
+
+  return { wordCount, hasMetrics, hasSpecificExample, starParts, starCount, relevanceRatio };
+}
+
+function computeRubricScores(answer: string, question: string) {
+  const analysis = analyzeAnswerQuality(answer, question);
+  const { wordCount, hasMetrics, hasSpecificExample, starCount, relevanceRatio } = analysis;
+
+  // Relevance (0-25): based on word count, relevance to question
+  let relevance = 5;
+  if (wordCount > 20) relevance += 5;
+  if (wordCount > 50) relevance += 5;
+  if (relevanceRatio > 0.3) relevance += 5;
+  if (relevanceRatio > 0.6) relevance += 5;
+  relevance = Math.min(25, relevance);
+
+  // STAR (0-25): based on STAR parts present
+  let star = starCount * 6;
+  star = Math.min(25, Math.max(0, star));
+
+  // Evidence (0-25): metrics, specifics, examples
+  let evidence = 3;
+  if (hasMetrics) evidence += 10;
+  if (hasSpecificExample) evidence += 7;
+  if (wordCount > 80) evidence += 3;
+  if (wordCount > 150) evidence += 2;
+  evidence = Math.min(25, evidence);
+
+  // Role alignment (0-15): use word count and specificity as proxy
+  let roleAlignment = 3;
+  if (hasSpecificExample) roleAlignment += 5;
+  if (hasMetrics) roleAlignment += 4;
+  if (wordCount > 60) roleAlignment += 3;
+  roleAlignment = Math.min(15, roleAlignment);
+
+  // Clarity (0-10): sentence structure, word count, not too short
+  let clarity = 2;
+  if (wordCount > 30) clarity += 3;
+  if (wordCount > 60 && wordCount < 300) clarity += 3;
+  if (wordCount > 300) clarity -= 1; // too verbose
+  if (hasSpecificExample) clarity += 2;
+  clarity = Math.min(10, Math.max(0, clarity));
+
+  const total = relevance + star + evidence + roleAlignment + clarity;
+
+  return {
+    score: total,
+    rubricBreakdown: { relevance, star, evidence, roleAlignment, clarity },
+    analysis,
+  };
+}
+
+function generateFeedback(score: number, analysis: ReturnType<typeof analyzeAnswerQuality>, question: string, answer: string) {
+  const { wordCount, hasMetrics, hasSpecificExample, starParts, starCount } = analysis;
+  
+  const strengths: string[] = [];
+  const improvements: string[] = [];
+
+  // Strengths
+  if (hasMetrics) strengths.push('Good use of quantifiable metrics to demonstrate impact');
+  if (hasSpecificExample) strengths.push('Includes a specific example from your experience');
+  if (starCount >= 3) strengths.push('Answer follows a structured format with clear components');
+  if (wordCount > 80) strengths.push('Sufficient detail provided to understand the scenario');
+  if (starParts.action) strengths.push('Clearly articulates the actions you personally took');
+  if (starParts.result && hasMetrics) strengths.push('Results are backed by measurable outcomes');
+
+  // Always add at least one strength
+  if (strengths.length === 0) {
+    if (wordCount > 20) strengths.push('Shows willingness to engage with the question');
+    else strengths.push('Attempted to address the question topic');
+  }
+
+  // Improvements — be honest
+  if (!hasMetrics) improvements.push('Add specific metrics or numbers — "improved performance" is weaker than "improved load time by 40%"');
+  if (!hasSpecificExample) improvements.push('Ground your answer in a specific, real experience rather than speaking hypothetically');
+  if (!starParts.situation) improvements.push('Start with the Situation — give context about when/where this happened and what the challenge was');
+  if (!starParts.task) improvements.push('Clarify your specific Task or responsibility — what was expected of you personally?');
+  if (!starParts.action) improvements.push('Describe the concrete Actions you took — use "I" not "we" to show ownership');
+  if (!starParts.result) improvements.push('End with a clear Result — ideally quantified. What was the measurable outcome?');
+  if (wordCount < 30) improvements.push('Your answer is too brief. Expand with a specific scenario and walk through what happened step by step');
+  if (wordCount > 250) improvements.push('Your answer is quite lengthy. Try to be more concise — focus on the most impactful details');
+
+  // Always at least one improvement
+  if (improvements.length === 0) {
+    improvements.push('Consider adding the business impact beyond just technical metrics');
+  }
+
+  // STAR analysis with extracted snippets or null
+  const starAnalysis = {
+    situation: starParts.situation ? 'Situation context detected' : null,
+    task: starParts.task ? 'Task/responsibility identified' : null,
+    action: starParts.action ? 'Specific actions described' : null,
+    result: starParts.result ? 'Results/outcomes mentioned' : null,
+    missing: [] as string[],
+  };
+  if (!starParts.situation) starAnalysis.missing.push('Situation');
+  if (!starParts.task) starAnalysis.missing.push('Task');
+  if (!starParts.action) starAnalysis.missing.push('Action');
+  if (!starParts.result) starAnalysis.missing.push('Result');
+
+  return { strengths: strengths.slice(0, 4), improvements: improvements.slice(0, 4), starAnalysis };
+}
+
 function getDemoResponse(task: AITask, payload: Record<string, any>): any {
   switch (task) {
     case 'parse_resume_feedback':
@@ -113,27 +237,38 @@ function getDemoResponse(task: AITask, payload: Record<string, any>): any {
         ],
       };
 
-    case 'mock_interview_feedback':
+    case 'mock_interview_feedback': {
+      const answer = payload.answer || '';
+      const question = payload.question || '';
+      const { score, rubricBreakdown, analysis } = computeRubricScores(answer, question);
+      const { strengths, improvements, starAnalysis } = generateFeedback(score, analysis, question, answer);
+
+      // Generate a contextual rewritten answer
+      const rewrittenAnswer = `In my previous role at [Company], our team faced a critical challenge with [specific problem related to the question] (Situation). I was responsible for [specific task] (Task). I took the initiative to [concrete actions: analyzed the problem, proposed a solution, implemented changes, collaborated with stakeholders] (Action). As a result, we achieved [specific measurable outcome, e.g., 30% improvement in key metric, reduced incidents by X, shipped Y weeks ahead of schedule] (Result). This experience taught me [key takeaway relevant to the role].`;
+
+      const nextQuestion = score > 60
+        ? 'Can you tell me more about the technical decisions you made and any tradeoffs you considered?'
+        : 'Could you walk me through a more specific example where you personally drove the outcome?';
+
       return {
-        strengths: [
-          'Clear and structured communication',
-          'Good use of specific examples with metrics',
-          'Demonstrates ownership and impact',
-        ],
-        improvements: [
-          'Could elaborate more on the "why" behind technical decisions',
-          'Consider adding the business impact, not just technical metrics',
-          'Try to be more concise in your opening — get to the key point faster',
-        ],
+        score,
+        rubricBreakdown,
+        strengths,
+        improvements,
+        starAnalysis,
+        rewrittenAnswer,
+        nextQuestion,
+        // Keep backward compat
+        confidenceScore: score,
         starCheck: {
-          situation: true,
-          task: true,
-          action: true,
-          result: payload.answer?.includes('%') || payload.answer?.length > 100,
+          situation: analysis.starParts.situation,
+          task: analysis.starParts.task,
+          action: analysis.starParts.action,
+          result: analysis.starParts.result,
         },
-        suggestedAnswer: `In my previous role at Figma, our team faced a critical performance bottleneck in the canvas rendering engine (Situation). I was tasked with identifying the root cause and implementing optimizations without breaking existing functionality (Task). I profiled the rendering pipeline, identified redundant re-renders in the layer composition step, and implemented a caching strategy with incremental updates (Action). This resulted in a 28% improvement in frame rates for complex files, directly improving the experience for our enterprise customers and reducing support tickets by 15% (Result).`,
-        confidenceScore: Math.floor(65 + Math.random() * 25),
+        suggestedAnswer: rewrittenAnswer,
       };
+    }
 
     case 'stage_explainer':
       return {

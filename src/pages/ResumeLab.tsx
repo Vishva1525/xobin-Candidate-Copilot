@@ -5,16 +5,17 @@ import { ResumeHealthCard } from '@/components/ResumeHealthCard';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { mockApplications, sampleResumeText } from '@/lib/mock-data';
 import { callAI } from '@/lib/ai-service';
+import { extractTextFromFile } from '@/lib/resume-parser';
 import { ResumeSections, ResumeHealth, TailoredDraft } from '@/lib/types';
 import { motion } from 'framer-motion';
-import { Upload, FileText, Sparkles, Copy, Check, ClipboardPaste } from 'lucide-react';
+import { Upload, FileText, Sparkles, Copy, Check, ClipboardPaste, Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 function parseResumeSections(text: string): ResumeSections {
   const lines = text.split('\n').filter(l => l.trim());
   const name = lines[0] || 'Unknown';
-  const contactLine = lines[1] || '';
+  const contactLine = lines.slice(0, 5).join(' ');
   const emailMatch = contactLine.match(/[\w.-]+@[\w.-]+/);
   const phoneMatch = contactLine.match(/\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
 
@@ -27,25 +28,25 @@ function parseResumeSections(text: string): ResumeSections {
 
   for (const line of lines) {
     const upper = line.toUpperCase().trim();
-    if (upper === 'SKILLS' || upper.includes('SKILLS')) { section = 'skills'; continue; }
-    if (upper === 'EXPERIENCE' || upper.includes('EXPERIENCE')) { section = 'experience'; continue; }
+    if (upper === 'SKILLS' || upper === 'TECHNICAL SKILLS' || upper.includes('SKILLS')) { section = 'skills'; continue; }
+    if (upper === 'EXPERIENCE' || upper.includes('EXPERIENCE') || upper.includes('WORK HISTORY')) { section = 'experience'; continue; }
     if (upper === 'EDUCATION' || upper.includes('EDUCATION')) { section = 'education'; continue; }
-    if (upper === 'PROFESSIONAL SUMMARY' || upper.includes('SUMMARY')) { section = 'summary'; continue; }
+    if (upper === 'PROFESSIONAL SUMMARY' || upper === 'SUMMARY' || upper.includes('SUMMARY') || upper.includes('OBJECTIVE')) { section = 'summary'; continue; }
 
     if (section === 'skills' && line.trim()) {
-      skills.push(...line.split(',').map(s => s.trim()).filter(Boolean));
+      skills.push(...line.split(/[,;•·|]/).map(s => s.trim()).filter(s => s.length > 1));
     }
     if (section === 'experience') {
-      if (line.includes('|') && !line.startsWith('•')) {
+      if ((line.includes('|') || line.includes('–') || line.includes('-')) && !line.startsWith('•') && !line.startsWith('-') && line.length < 120) {
         if (currentExp) experience.push(currentExp);
-        const parts = line.split('|').map(s => s.trim());
-        currentExp = { role: parts[0], company: parts[1], duration: parts[2] || '', bullets: [] };
-      } else if (line.startsWith('•') && currentExp) {
-        currentExp.bullets.push(line.replace('•', '').trim());
+        const parts = line.split(/[|–—]/).map(s => s.trim());
+        currentExp = { role: parts[0], company: parts[1] || '', duration: parts[2] || '', bullets: [] };
+      } else if ((line.startsWith('•') || line.startsWith('-') || line.startsWith('*')) && currentExp) {
+        currentExp.bullets.push(line.replace(/^[•\-*]\s*/, '').trim());
       }
     }
     if (section === 'education' && line.trim()) {
-      const parts = line.split('|').map(s => s.trim());
+      const parts = line.split(/[|–—]/).map(s => s.trim());
       if (parts.length >= 2) {
         education.push({ degree: parts[0], school: parts[1], year: parts[2] || '' });
       }
@@ -69,6 +70,8 @@ export default function ResumeLab() {
   const [selectedAppId, setSelectedAppId] = useState(mockApplications[0].id);
   const [showPaste, setShowPaste] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [extractionError, setExtractionError] = useState<string | null>(null);
 
   const processResume = useCallback(async (text: string) => {
     setResumeText(text);
@@ -82,17 +85,31 @@ export default function ResumeLab() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
+    setExtracting(true);
+    setExtractionError(null);
+    
     try {
-      const text = await file.text();
-      if (text.trim()) {
+      const text = await extractTextFromFile(file);
+      if (text.trim().length > 20) {
         await processResume(text);
       } else {
-        toast.error('Could not extract text. Please paste your resume manually.');
+        setExtractionError("We couldn't extract enough text from this file. Please paste your resume text below.");
         setShowPaste(true);
       }
-    } catch {
-      toast.error('Could not read file. Please paste your resume manually.');
+    } catch (err) {
+      console.error('File extraction error:', err);
+      setExtractionError("We couldn't read this file. Please paste your resume text below.");
       setShowPaste(true);
+    } finally {
+      setExtracting(false);
+    }
+  };
+
+  const handlePasteSubmit = async (text: string) => {
+    if (text.trim().length > 20) {
+      setExtractionError(null);
+      await processResume(text);
     }
   };
 
@@ -127,12 +144,33 @@ export default function ResumeLab() {
             {!hasResume ? (
               <div className="space-y-4">
                 {/* Upload area */}
-                <label className="group flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-card/50 p-12 cursor-pointer hover:border-primary/40 transition-colors">
-                  <Upload className="h-8 w-8 text-muted-foreground mb-3 group-hover:text-primary transition-colors" />
-                  <p className="text-sm font-medium text-foreground">Upload resume</p>
-                  <p className="text-xs text-muted-foreground mt-1">PDF or DOCX — we'll extract the text</p>
-                  <input type="file" accept=".pdf,.docx,.doc,.txt" onChange={handleFileUpload} className="hidden" />
+                <label className={cn(
+                  "group flex flex-col items-center justify-center rounded-xl border-2 border-dashed bg-card/50 p-12 cursor-pointer transition-colors",
+                  extracting ? "border-primary/40 bg-primary/5" : "border-border hover:border-primary/40"
+                )}>
+                  {extracting ? (
+                    <>
+                      <Loader2 className="h-8 w-8 text-primary mb-3 animate-spin" />
+                      <p className="text-sm font-medium text-foreground">Extracting text from your resume...</p>
+                      <p className="text-xs text-muted-foreground mt-1">This may take a moment for large files</p>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-8 w-8 text-muted-foreground mb-3 group-hover:text-primary transition-colors" />
+                      <p className="text-sm font-medium text-foreground">Upload resume</p>
+                      <p className="text-xs text-muted-foreground mt-1">PDF or DOCX — we'll extract the text</p>
+                    </>
+                  )}
+                  <input type="file" accept=".pdf,.docx,.doc,.txt" onChange={handleFileUpload} className="hidden" disabled={extracting} />
                 </label>
+
+                {/* Extraction error */}
+                {extractionError && (
+                  <div className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 flex items-start gap-2">
+                    <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                    <p className="text-sm text-warning">{extractionError}</p>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-3">
                   <div className="flex-1 h-px bg-border" />
@@ -158,21 +196,17 @@ export default function ResumeLab() {
                 </div>
 
                 {showPaste && (
-                  <div className="space-y-3">
-                    <textarea
-                      rows={12}
-                      placeholder="Paste your resume text here..."
-                      className="w-full rounded-lg border border-border bg-input px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-                      onBlur={(e) => {
-                        if (e.target.value.trim()) processResume(e.target.value);
-                      }}
-                    />
-                    <p className="text-xs text-muted-foreground">Click outside the text area when done.</p>
-                  </div>
+                  <PasteResumeArea onSubmit={handlePasteSubmit} />
                 )}
               </div>
             ) : (
               <div className="space-y-6">
+                {/* Resume loaded indicator */}
+                <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-2.5">
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                  <p className="text-sm text-success font-medium">Resume loaded — available in Prep Studio & AI actions</p>
+                </div>
+
                 {/* Parsed sections */}
                 {resumeSections && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
@@ -407,5 +441,43 @@ export default function ResumeLab() {
         </div>
       </div>
     </Layout>
+  );
+}
+
+// Paste resume fallback component
+function PasteResumeArea({ onSubmit }: { onSubmit: (text: string) => void }) {
+  const [text, setText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (text.trim().length < 20) return;
+    setSubmitting(true);
+    await onSubmit(text);
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="space-y-3">
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={12}
+        placeholder="Paste your resume text here..."
+        className="w-full rounded-lg border border-border bg-input px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+      />
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          {text.trim().length < 20 ? 'Paste at least a few lines of resume content' : '✓ Ready to parse'}
+        </p>
+        <button
+          onClick={handleSubmit}
+          disabled={text.trim().length < 20 || submitting}
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+          Parse Resume
+        </button>
+      </div>
+    </div>
   );
 }
