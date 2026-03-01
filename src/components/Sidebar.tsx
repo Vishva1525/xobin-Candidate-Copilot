@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, Brain, LogOut, Sparkles, Sun, Moon, Briefcase, Shield } from 'lucide-react';
+import { LayoutDashboard, FileText, Brain, LogOut, Sparkles, Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
 import { cn } from '@/lib/utils';
@@ -10,23 +10,15 @@ export function Sidebar() {
   const { user, role, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
-  const navItems = role === 'admin'
-    ? [
-        { to: '/admin', label: 'Admin Panel', icon: Shield },
-      ]
-    : role === 'recruiter'
-    ? [
-        { to: '/recruiter', label: 'Dashboard', icon: Briefcase },
-      ]
-    : [
-        { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { to: '/resume-lab', label: 'Resume Lab', icon: FileText },
-        { to: '/prep-studio', label: 'Prep Studio', icon: Brain },
-      ];
+  const navItems = [
+    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/resume-lab', label: 'Resume Lab', icon: FileText },
+    { to: '/prep-studio', label: 'Prep Studio', icon: Brain },
+  ];
 
   return (
     <aside className="flex w-64 flex-col border-r border-sidebar-border bg-sidebar">
-      <Link to={role === 'admin' ? '/admin' : role === 'recruiter' ? '/recruiter' : '/dashboard'} className="flex items-center gap-2.5 px-6 py-5 border-b border-sidebar-border hover:bg-sidebar-accent/30 transition-colors">
+      <Link to="/dashboard" className="flex items-center gap-2.5 px-6 py-5 border-b border-sidebar-border hover:bg-sidebar-accent/30 transition-colors">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
           <Sparkles className="h-4 w-4 text-primary" />
         </div>
