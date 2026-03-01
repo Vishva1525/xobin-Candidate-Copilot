@@ -1,10 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, Brain, LogOut, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, FileText, Brain, LogOut, Sun, Moon, Menu, X } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import xobinLogo from '@/assets/xobin-logo.png';
+import { useState, useEffect } from 'react';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -12,13 +13,13 @@ const navItems = [
   { to: '/prep-studio', label: 'Prep Studio', icon: Brain },
 ];
 
-export function Sidebar() {
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
   const { email, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <aside className="flex w-64 flex-col border-r border-sidebar-border bg-sidebar">
+    <>
       {/* Brand */}
       <div className="flex items-center gap-2.5 px-6 py-5 border-b border-sidebar-border">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden">
@@ -38,6 +39,7 @@ export function Sidebar() {
             <Link
               key={item.to}
               to={item.to}
+              onClick={onNavigate}
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150',
                 active
@@ -89,6 +91,75 @@ export function Sidebar() {
           </button>
         </div>
       </div>
-    </aside>
+    </>
   );
+}
+
+export function MobileMenuButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="p-2 rounded-lg text-foreground hover:bg-muted transition-colors"
+      aria-label="Open menu"
+    >
+      <Menu className="h-5 w-5" />
+    </button>
+  );
+}
+
+export function Sidebar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
+
+  // Close on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex w-64 flex-col border-r border-sidebar-border bg-sidebar">
+        <SidebarContent />
+      </aside>
+
+      {/* Mobile hamburger — rendered via Layout */}
+      {/* Mobile drawer */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
+              onClick={() => setMobileOpen(false)}
+            />
+            <motion.aside
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+              className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-sidebar shadow-xl md:hidden"
+            >
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="absolute top-4 right-4 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
+                aria-label="Close menu"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <SidebarContent onNavigate={() => setMobileOpen(false)} />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+// Export a hook-like function to control mobile sidebar from Layout
+export function useMobileSidebar() {
+  const [open, setOpen] = useState(false);
+  return { open, setOpen };
 }
