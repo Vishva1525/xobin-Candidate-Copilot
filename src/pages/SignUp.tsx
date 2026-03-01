@@ -1,21 +1,15 @@
 import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { useAuth, type AppRole } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
 import { Sparkles, ArrowRight, Sun, Moon, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 
-const ROLES: { value: AppRole; label: string; desc: string }[] = [
-  { value: 'student', label: 'Student', desc: 'Track applications & prep with AI' },
-  { value: 'recruiter', label: 'Recruiter', desc: 'Manage jobs & review candidates' },
-];
-
 export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [role, setSelectedRole] = useState<AppRole>('student');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const { user, signUp, loading } = useAuth();
@@ -35,7 +29,7 @@ export default function SignUp() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    const { error } = await signUp(email, password, role, displayName);
+    const { error } = await signUp(email, password, displayName);
     setSubmitting(false);
     if (error) {
       toast({ title: 'Sign up failed', description: error, variant: 'destructive' });
@@ -87,28 +81,6 @@ export default function SignUp() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-            {/* Role selection */}
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-2">I am a</label>
-              <div className="grid grid-cols-2 gap-2">
-                {ROLES.map(r => (
-                  <button
-                    key={r.value}
-                    type="button"
-                    onClick={() => setSelectedRole(r.value)}
-                    className={`rounded-lg border p-3 text-left transition-all ${
-                      role === r.value
-                        ? 'border-primary bg-primary/10 ring-1 ring-primary'
-                        : 'border-border hover:border-primary/30'
-                    }`}
-                  >
-                    <p className="text-sm font-medium text-foreground">{r.label}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{r.desc}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div>
               <label htmlFor="name" className="block text-xs font-medium text-muted-foreground mb-1.5">
                 Display name

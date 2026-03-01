@@ -1,14 +1,13 @@
 import { Navigate } from 'react-router-dom';
-import { useAuth, type AppRole } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 
 interface Props {
   children: React.ReactNode;
-  allowedRoles?: AppRole[];
 }
 
-export function ProtectedRoute({ children, allowedRoles }: Props) {
-  const { user, role, loading } = useAuth();
+export function ProtectedRoute({ children }: Props) {
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -19,16 +18,6 @@ export function ProtectedRoute({ children, allowedRoles }: Props) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-
-  if (allowedRoles && role && !allowedRoles.includes(role)) {
-    // Redirect to their appropriate dashboard
-    const dashboardMap: Record<AppRole, string> = {
-      student: '/dashboard',
-      recruiter: '/recruiter',
-      admin: '/admin',
-    };
-    return <Navigate to={dashboardMap[role] || '/dashboard'} replace />;
-  }
 
   return <>{children}</>;
 }

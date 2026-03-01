@@ -10,7 +10,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const { user, role, signIn, loading } = useAuth();
+  const { user, signIn, loading } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
 
@@ -22,10 +22,6 @@ export default function Login() {
     );
   }
 
-  if (user && role) {
-    const dest = role === 'admin' ? '/admin' : role === 'recruiter' ? '/recruiter' : '/dashboard';
-    return <Navigate to={dest} replace />;
-  }
   if (user) return <Navigate to="/dashboard" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {

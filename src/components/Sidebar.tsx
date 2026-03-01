@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 
 export function Sidebar() {
   const location = useLocation();
-  const { user, role, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   const navItems = [
@@ -66,7 +66,6 @@ export function Sidebar() {
         <div className="flex items-center justify-between">
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-sidebar-accent-foreground">{user?.email}</p>
-            <p className="text-xs text-muted-foreground capitalize">{role || 'User'}</p>
           </div>
           <button
             onClick={signOut}
