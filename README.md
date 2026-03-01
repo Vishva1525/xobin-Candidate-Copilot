@@ -1,73 +1,123 @@
-# Welcome to your Lovable project
+Xobin Candidate Co-Pilot
+Your AI companion through every step of the hiring journey
 
-## Project info
+The hiring process today is broken for candidates.  
+You apply, upload your resume, and then wait in uncertainty.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+Most hiring platforms are built for recruiters — candidates are left in the dark.
 
-## How can I edit this code?
+Xobin Candidate Co-Pilot reimagines the candidate experience by giving applicants visibility, preparation tools, and AI guidance throughout the hiring process.
 
-There are several ways of editing your application.
 
-**Use Lovable**
+Problem We’re Solving
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+Candidates typically face three major problems:
 
-Changes made via Lovable will be committed automatically to this repo.
+- No visibility into where their application stands  
+- No preparation guidance for upcoming interview stages  
+- No feedback to improve their chances  
 
-**Use your preferred IDE**
+Candidate Co-Pilot transforms hiring from a black-box process into a transparent and guided journey.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Core Features
 
-Follow these steps:
+Application Dashboard
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Candidates can clearly track their hiring journey:
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Applied → Screening → Assessment → AI Interview → Recruiter Review → Offer / Reject
 
-# Step 3: Install the necessary dependencies.
-npm i
+Each stage shows:
+- current status
+- expected timeline
+- what the company is doing in the background
+- what the candidate should do next
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+This eliminates the common “application black hole” experience.
 
-**Edit a file directly in GitHub**
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Resume Lab
 
-**Use GitHub Codespaces**
+An AI-powered workspace that helps candidates improve their resumes.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Capabilities include:
 
-## What technologies are used for this project?
+- resume upload and parsing
+- resume health insights
+- tailoring resume for a specific role
+- skill gap analysis
+- ATS keyword optimization
+- AI-generated resume improvements
 
-This project is built with:
+Candidates can generate a role-specific resume draft instantly.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
 
-## How can I deploy this project?
+Prep Studio
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+A preparation environment for upcoming interviews.
 
-## Can I connect a custom domain to my Lovable project?
+Includes:
 
-Yes, you can!
+- AI-generated role-specific interview questions
+- mock interview simulation
+- voice-based interview practice
+- contextual AI feedback on answers
+- suggestions for stronger responses
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+This helps candidates prepare strategically instead of guessing what to expect.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+AI Candidate Co-Pilot
+
+An AI assistant embedded across the platform that helps candidates:
+
+- understand their current hiring stage
+- predict likely interview questions
+- improve resumes based on job descriptions
+- draft recruiter follow-up messages
+- get preparation guidance
+
+The AI works within the context of the candidate’s role and stage, making it practical and actionable.
+
+
+Explore Other Roles
+
+Candidates can explore additional roles within the company.
+
+The system allows candidates to:
+- browse simulated job openings
+- view role descriptions
+- tailor their resume instantly for the selected role
+
+This enables candidates to discover better-fit opportunities and adapt their profile quickly.
+
+
+Tech Stack
+
+Frontend  
+Next.js  
+TypeScript  
+TailwindCSS  
+shadcn/ui  
+
+Backend  
+Supabase  
+
+AI Integration  
+Google Gemini Flash API  
+
+Deployment  
+Vercel  
+
+
+Live Demo
+
+https://your-vercel-link.vercel.app
+
+
+Product Philosophy
+
+Hiring should not feel like sending your resume into a black hole.
+
+Xobin Candidate Co-Pilot transforms hiring into a transparent, guided, and AI-assisted journey that empowers candidates to prepare, improve, and succeed.
