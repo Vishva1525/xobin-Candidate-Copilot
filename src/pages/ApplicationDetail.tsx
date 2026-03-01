@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { UnifiedTimeline } from '@/components/UnifiedTimeline';
 import { FollowUpEmailModal } from '@/components/FollowUpEmailModal';
 import { AIActionButton } from '@/components/AIActionButton';
-import { RecruiterChat } from '@/components/RecruiterChat';
-import { mockApplications, getStageInfo } from '@/lib/mock-data';
+import { AICompanion } from '@/components/AICompanion';
+import { xobinApplication, getStageInfo } from '@/lib/mock-data';
 import { callAI } from '@/lib/ai-service';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { ArrowLeft, MapPin, Calendar, MessageSquare, Sparkles, Eye, Clock, User, Activity, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -20,24 +21,9 @@ function formatTimeAgo(isoDate: string) {
 }
 
 export default function ApplicationDetail() {
-  const { id } = useParams<{ id: string }>();
-  const app = mockApplications.find(a => a.id === id);
+  const app = xobinApplication;
   const [emailModalOpen, setEmailModalOpen] = useState(false);
-
-  if (!app) {
-    return (
-      <Layout>
-        <div className="flex h-full items-center justify-center">
-          <div className="text-center">
-            <p className="text-lg font-semibold text-foreground">Application not found</p>
-            <Link to="/dashboard" className="text-sm text-primary hover:underline mt-2 inline-block">
-              Back to Dashboard
-            </Link>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
+  const [resumeText] = useLocalStorage<string>('candidateos_resume', '');
 
   const stageInfo = getStageInfo(app.stage);
 
@@ -66,7 +52,7 @@ export default function ApplicationDetail() {
               </div>
             </div>
 
-            {/* Trust & Transparency Widgets */}
+            {/* Trust Widgets */}
             <div className="grid grid-cols-3 gap-3 mb-6">
               <div className="rounded-xl border border-border bg-card p-4">
                 <div className="flex items-center gap-2 mb-2">
@@ -75,7 +61,7 @@ export default function ApplicationDetail() {
                   </div>
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Your Handler</span>
                 </div>
-                <p className="text-sm font-medium text-foreground">{app.handlerRole || 'Recruiting Coordinator'}</p>
+                <p className="text-sm font-medium text-foreground">{app.handlerRole}</p>
               </div>
               <div className="rounded-xl border border-border bg-card p-4">
                 <div className="flex items-center gap-2 mb-2">
@@ -95,13 +81,11 @@ export default function ApplicationDetail() {
                   </div>
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Response SLA</span>
                 </div>
-                <p className="text-sm font-medium text-foreground">
-                  ~{app.typicalResponseDays || 5} business days
-                </p>
+                <p className="text-sm font-medium text-foreground">~{app.typicalResponseDays} business days</p>
               </div>
             </div>
 
-            {/* Unified Application Timeline */}
+            {/* Timeline */}
             <div className="rounded-xl border border-border bg-card p-6 mb-6">
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-1">
@@ -138,7 +122,7 @@ export default function ApplicationDetail() {
             )}
 
             {/* Messages */}
-            <div className="rounded-xl border border-border bg-card p-6">
+            <div className="rounded-xl border border-border bg-card p-6 mb-6">
               <div className="flex items-center gap-2 mb-4">
                 <MessageSquare className="h-4 w-4 text-primary" />
                 <h2 className="text-sm font-semibold text-card-foreground">Messages</h2>
@@ -160,6 +144,15 @@ export default function ApplicationDetail() {
                 ))}
               </div>
             </div>
+
+            {/* AI Companion */}
+            <AICompanion
+              role={app.role}
+              company={app.company}
+              stage={app.stage}
+              jobDescription={app.jobDescription}
+              resumeText={resumeText}
+            />
           </motion.div>
         </div>
 
@@ -213,13 +206,6 @@ export default function ApplicationDetail() {
         role={app.role}
         company={app.company}
         stage={app.stage}
-      />
-
-      <RecruiterChat
-        role={app.role}
-        company={app.company}
-        stage={app.stage}
-        jobDescription={app.jobDescription}
       />
     </Layout>
   );
