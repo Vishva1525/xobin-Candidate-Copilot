@@ -205,9 +205,9 @@ serve(async (req) => {
 
   try {
     const { task, payload } = await req.json();
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!GEMINI_API_KEY) {
-      return new Response(JSON.stringify({ error: "Gemini API key not configured" }), {
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      return new Response(JSON.stringify({ error: "AI API key not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -216,26 +216,37 @@ serve(async (req) => {
     const prompt = buildPrompt(task, payload || {});
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      "https://ai.gateway.lovable.dev/v1/chat/completions",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2048,
-          },
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: "You are a helpful AI assistant. Always return valid JSON only, no markdown wrapping." },
+            { role: "user", content: prompt },
+          ],
+          temperature: 0.7,
+          max_tokens: 2048,
         }),
       }
     );
 
     if (!response.ok) {
       const t = await response.text();
-      console.error("Gemini API error:", response.status, t);
+      console.error("AI gateway error:", response.status, t);
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded, please try again shortly." }), {
           status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits in Settings → Workspace → Usage." }), {
+          status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -246,7 +257,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+    const text = data.choices?.[0]?.message?.content || '{}';
     
     // Extract JSON from the response (handle possible markdown wrapping)
     let jsonStr = text.trim();
@@ -259,7 +270,7 @@ serve(async (req) => {
     try {
       result = JSON.parse(jsonStr);
     } catch {
-      console.error("Failed to parse Gemini response as JSON:", jsonStr.slice(0, 200));
+      console.error("Failed to parse AI response as JSON:", jsonStr.slice(0, 200));
       result = { error: "Failed to parse AI response", raw: jsonStr.slice(0, 500) };
     }
 
