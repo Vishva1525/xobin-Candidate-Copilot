@@ -225,7 +225,7 @@ export default function ResumeLab() {
             className="max-w-2xl"
           >
             <h1 className="text-2xl font-bold text-foreground mb-1">Resume Lab</h1>
-            <p className="text-sm text-muted-foreground mb-2">Tailoring for: <span className="font-medium text-foreground">{selectedRoleTitle}</span> at Xobin</p>
+            <p className="text-sm text-muted-foreground mb-2">Tailoring for: <span className="font-medium text-foreground">{selectedRoleTitle}</span> at xobin</p>
 
             {/* Exploration context banner */}
             {isExploring && (
@@ -371,9 +371,18 @@ export default function ResumeLab() {
                     {resumeSections.education.length > 0 && (
                       <div className="rounded-xl border border-border bg-card p-5">
                         <h3 className="text-sm font-semibold text-card-foreground mb-3">Education</h3>
-                        {resumeSections.education.map((ed, i) => (
-                          <p key={i} className="text-sm text-muted-foreground">{ed.degree} — {ed.school} {ed.year && `(${ed.year})`}</p>
-                        ))}
+                        <div className="space-y-2">
+                          {resumeSections.education.map((ed, i) => (
+                            <div key={i}>
+                              <p className="text-sm font-medium text-foreground">{ed.degree}</p>
+                              {(ed.school || ed.year) && (
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {ed.school}{ed.school && ed.year ? ' · ' : ''}{ed.year}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
 
@@ -507,7 +516,7 @@ export default function ResumeLab() {
               {/* Role context switcher */}
               <div className="rounded-lg border border-border bg-card px-3 py-2">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Role Context</p>
-                <p className="text-xs text-foreground font-medium">{selectedRoleTitle} (Xobin)</p>
+                <p className="text-xs text-foreground font-medium">{selectedRoleTitle} (xobin)</p>
                 <p className="text-[10px] text-muted-foreground mt-1">Switch roles from the Dashboard → Explore Roles.</p>
               </div>
 
