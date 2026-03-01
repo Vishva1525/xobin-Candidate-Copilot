@@ -16,14 +16,43 @@ import { cn } from '@/lib/utils';
 function parseResumeSections(text: string): ResumeSections {
   const lines = text.split('\n').filter(l => l.trim());
   
-  const rawName = lines[0] || 'Unknown';
-  const name = rawName.split(/[|,]/)
-    .map(s => s.trim())
-    .find(s => s.length > 1 && s.length < 60 && !s.includes('@') && !s.match(/\d{5,}/)) || rawName.slice(0, 50);
+  // --- Name extraction ---
+  // Common designations/titles to strip from the name line
+  const designations = /\b(software\s*(developer|engineer|dev)|developer|engineer|designer|analyst|intern|manager|architect|consultant|associate|executive|specialist|lead|sr\.?|jr\.?|senior|junior|full[- ]?stack|front[- ]?end|back[- ]?end|data\s*scientist|data\s*engineer|product\s*designer|ux\s*designer|ui\s*designer|web\s*developer|devops|qa|tester|trainee)\b/gi;
+  
+  const rawFirstLine = (lines[0] || '').trim();
+  // Split on common separators: pipe, dash, comma, em-dash
+  const nameParts = rawFirstLine.split(/[|–—,\-]/).map(s => s.trim());
+  
+  // Pick the part that looks most like a name (no digits, no @, no designation keywords, reasonable length)
+  let bestName = '';
+  for (const part of nameParts) {
+    const cleaned = part.replace(designations, '').trim();
+    if (
+      cleaned.length >= 2 &&
+      cleaned.length < 50 &&
+      !cleaned.includes('@') &&
+      !/\d{3,}/.test(cleaned) &&      // no long digit sequences (phone numbers)
+      !/^https?:\/\//.test(cleaned) && // no URLs
+      !cleaned.match(/\.(com|org|net|io|in|dev)$/i) // no domains
+    ) {
+      bestName = cleaned;
+      break;
+    }
+  }
+  if (!bestName) bestName = nameParts[0]?.replace(designations, '').trim() || rawFirstLine.slice(0, 40);
+  // Remove trailing/leading special chars
+  bestName = bestName.replace(/^[\s\-–—|,.:]+|[\s\-–—|,.:]+$/g, '').trim();
 
-  const fullText = lines.slice(0, 8).join(' ');
-  const emailMatch = fullText.match(/[\w.-]+@[\w.-]+\.\w+/);
-  const phoneMatch = fullText.match(/\+?\d[\d\s\-().]{7,}\d/);
+  // --- Email & Phone extraction ---
+  // Search first ~10 lines for contact info
+  const headerText = lines.slice(0, 10).join(' ');
+  const emailMatch = headerText.match(/[\w.+\-]+@[\w.\-]+\.\w{2,}/);
+  
+  // Robust phone: look for patterns like +91 8668101068, (555) 123-4567, etc.
+  const phoneMatch = headerText.match(/(?:\+?\d{1,3}[\s\-.]?)?\(?\d{2,4}\)?[\s\-.]?\d{3,4}[\s\-.]?\d{3,4}/);
+  // Clean phone: remove extra spaces
+  const phone = phoneMatch ? phoneMatch[0].replace(/\s+/g, ' ').trim() : '';
 
   const skills: string[] = [];
   const experience: ResumeSections['experience'] = [];
@@ -99,7 +128,7 @@ function parseResumeSections(text: string): ResumeSections {
   }
 
   return {
-    contact: { name: name.trim(), email: emailMatch?.[0] || '', phone: phoneMatch?.[0] || '' },
+    contact: { name: bestName, email: emailMatch?.[0] || '', phone },
     skills,
     experience,
     education,
