@@ -40,32 +40,51 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
   const [, setStoredEmail] = useLocalStorage<string | null>('candidateos_email', null);
   const navigate = useNavigate();
 
-  // Listen for auth state changes (Google OAuth callback)
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        const userEmail = session.user.email || session.user.user_metadata?.email || '';
-        window.localStorage.setItem('candidateos_email', JSON.stringify(userEmail));
-        setStoredEmail(userEmail);
-        navigate('/dashboard');
-      }
-    });
+    let isMounted = true;
 
-    // Also check if already signed in
+    const handleUser = (userEmail: string) => {
+      window.localStorage.setItem('candidateos_email', JSON.stringify(userEmail));
+      setStoredEmail(userEmail);
+      navigate('/dashboard', { replace: true });
+    };
+
+    // First restore session from storage
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted) return;
       if (session?.user) {
-        const userEmail = session.user.email || '';
-        window.localStorage.setItem('candidateos_email', JSON.stringify(userEmail));
-        setStoredEmail(userEmail);
-        navigate('/dashboard');
+        handleUser(session.user.email || session.user.user_metadata?.email || '');
+      } else {
+        setAuthReady(true);
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Then listen for future auth changes (Google OAuth callback)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
+      if (event === 'SIGNED_IN' && session?.user) {
+        handleUser(session.user.email || session.user.user_metadata?.email || '');
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate, setStoredEmail]);
+
+  // Show nothing while checking existing session to prevent flash
+  if (!authReady) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
