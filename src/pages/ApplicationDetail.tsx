@@ -1,12 +1,14 @@
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { UnifiedTimeline } from '@/components/UnifiedTimeline';
 import { FollowUpEmailModal } from '@/components/FollowUpEmailModal';
 import { AIActionButton } from '@/components/AIActionButton';
 import { AICompanion } from '@/components/AICompanion';
-import { xobinApplication, getStageInfo } from '@/lib/mock-data';
+import { getStageInfo } from '@/lib/mock-data';
 import { callAI } from '@/lib/ai-service';
 import { useLocalStorage } from '@/hooks/use-local-storage';
+import { useApplications } from '@/hooks/use-applications';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, MapPin, Calendar, MessageSquare, Sparkles, Eye, Clock, User, Activity, Shield } from 'lucide-react';
@@ -21,7 +23,10 @@ function formatTimeAgo(isoDate: string) {
 }
 
 export default function ApplicationDetail() {
-  const app = xobinApplication;
+  const { id } = useParams<{ id: string }>();
+  const { fullApplications } = useApplications();
+  const app = fullApplications.find(a => a.id === id) || fullApplications[0];
+  
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [resumeText] = useLocalStorage<string>('candidateos_resume', '');
 
@@ -122,28 +127,30 @@ export default function ApplicationDetail() {
             )}
 
             {/* Messages */}
-            <div className="rounded-xl border border-border bg-card p-6 mb-6">
-              <div className="flex items-center gap-2 mb-4">
-                <MessageSquare className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-semibold text-card-foreground">Messages</h2>
-              </div>
-              <div className="space-y-4">
-                {app.messages.map(msg => (
-                  <div key={msg.id} className={cn('flex', !msg.isRecruiter && 'justify-end')}>
-                    <div className={cn(
-                      'max-w-[80%] rounded-xl px-4 py-3',
-                      msg.isRecruiter
-                        ? 'bg-secondary text-secondary-foreground'
-                        : 'bg-primary/10 text-foreground'
-                    )}>
-                      <p className="text-xs font-medium mb-1">{msg.from}</p>
-                      <p className="text-sm leading-relaxed">{msg.content}</p>
-                      <p className="text-[10px] text-muted-foreground mt-1.5">{msg.date}</p>
+            {app.messages.length > 0 && (
+              <div className="rounded-xl border border-border bg-card p-6 mb-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <MessageSquare className="h-4 w-4 text-primary" />
+                  <h2 className="text-sm font-semibold text-card-foreground">Messages</h2>
+                </div>
+                <div className="space-y-4">
+                  {app.messages.map(msg => (
+                    <div key={msg.id} className={cn('flex', !msg.isRecruiter && 'justify-end')}>
+                      <div className={cn(
+                        'max-w-[80%] rounded-xl px-4 py-3',
+                        msg.isRecruiter
+                          ? 'bg-secondary text-secondary-foreground'
+                          : 'bg-primary/10 text-foreground'
+                      )}>
+                        <p className="text-xs font-medium mb-1">{msg.from}</p>
+                        <p className="text-sm leading-relaxed">{msg.content}</p>
+                        <p className="text-[10px] text-muted-foreground mt-1.5">{msg.date}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* AI Companion */}
             <AICompanion
