@@ -307,83 +307,153 @@ Best regards,
       const evaluation = payload.evaluation || {};
       const history = payload.history || [];
       const role = payload.application?.role || 'this role';
+      const turnIdx = history.length; // 0-based turn number
 
-      // Extract a snippet from the candidate's answer (first meaningful phrase)
+      // --- Extract the best snippet from the candidate's answer ---
       const sentences = answer.split(/[.!?]+/).map((s: string) => s.trim()).filter((s: string) => s.length > 8);
       const words = answer.split(/\s+/);
-      
-      // Find the most "interesting" snippet: one with numbers, or a specific claim
-      let snippet = '';
-      const metricsMatch = answer.match(/\d+%|\d+x|\$[\d,]+|\d+\s*(users|customers|team|engineers|projects|months|weeks|days)/i);
+
+      // Try multiple snippet strategies and pick by turn index to vary
+      const snippetCandidates: string[] = [];
+
+      // Strategy 1: metrics-based snippet
+      const metricsMatch = answer.match(/\d+%|\d+x|\$[\d,]+|\d+\s*(users|customers|team|engineers|projects|months|weeks|days|hours)/i);
       if (metricsMatch) {
         const idx = answer.indexOf(metricsMatch[0]);
         const start = Math.max(0, answer.lastIndexOf(' ', Math.max(0, idx - 30)) + 1);
         const end = Math.min(answer.length, answer.indexOf(' ', idx + metricsMatch[0].length + 15));
-        snippet = answer.slice(start, end > start ? end : start + 50).trim();
-      } else if (sentences.length > 0) {
-        // Pick a sentence with action verbs
-        const actionSentence = sentences.find((s: string) => /I\s+(led|built|designed|implemented|created|managed|developed|improved)/i.test(s));
-        snippet = (actionSentence || sentences[0]).slice(0, 60);
-      } else {
-        snippet = words.slice(0, Math.min(10, words.length)).join(' ');
+        snippetCandidates.push(answer.slice(start, end > start ? end : start + 50).trim());
       }
+
+      // Strategy 2: action-verb sentence
+      const actionSentence = sentences.find((s: string) => /I\s+(led|built|designed|implemented|created|managed|developed|improved|reduced|shipped|launched|refactored|migrated|automated)/i.test(s));
+      if (actionSentence) snippetCandidates.push(actionSentence.slice(0, 60));
+
+      // Strategy 3: tool/tech mention
+      const techMatch = answer.match(/(React|TypeScript|Python|AWS|Docker|Kubernetes|CI\/CD|GraphQL|REST|SQL|Node|Redis|Kafka|Stripe|Figma|Jira|Git)\b/i);
+      if (techMatch) {
+        const idx = answer.indexOf(techMatch[0]);
+        const start = Math.max(0, answer.lastIndexOf(' ', Math.max(0, idx - 20)) + 1);
+        const end = Math.min(answer.length, idx + 50);
+        snippetCandidates.push(answer.slice(start, end).trim());
+      }
+
+      // Strategy 4: first meaningful sentence
+      if (sentences.length > 0) snippetCandidates.push(sentences[0].slice(0, 60));
+
+      // Strategy 5: raw words fallback
+      if (snippetCandidates.length === 0) {
+        snippetCandidates.push(words.slice(0, Math.min(10, words.length)).join(' '));
+      }
+
+      // Pick snippet based on turn index to ensure variety
+      let snippet = snippetCandidates[turnIdx % snippetCandidates.length];
       if (snippet.length > 60) snippet = snippet.slice(0, 57) + '...';
 
       const score = evaluation.score ?? 50;
-      const missing = evaluation.missingStar || evaluation.starAnalysis?.missing || [];
-      const previousResponses = history.map((h: any) => h.followUp).filter(Boolean);
+      const missing: string[] = evaluation.missingStar || evaluation.starAnalysis?.missing || [];
+      const previousResponses: string[] = history.map((h: any) => h.followUp).filter(Boolean);
 
-      // Determine response intent based on score and gaps
+      // --- Response pools keyed by intent + variety ---
       let responseIntent: string;
       let interviewerResponse: string;
       let followUpQuestion: string;
 
       if (score < 55) {
-        // Low score: probe for missing STAR elements
         responseIntent = 'probe';
-        if (missing.includes('Result')) {
-          interviewerResponse = `You mentioned "${snippet}", but I didn't hear about the outcome. What was the measurable result?`;
-          followUpQuestion = `Can you walk me through the specific impact — numbers, percentages, or business outcomes from that work?`;
-        } else if (missing.includes('Action')) {
-          interviewerResponse = `I hear the context around "${snippet}", but what did you personally do? I'd like to understand your specific contribution.`;
-          followUpQuestion = `What concrete steps did you take, and how did you decide on that approach over alternatives?`;
-        } else if (missing.includes('Situation')) {
-          interviewerResponse = `You jumped into "${snippet}" — can you set the scene? What was the challenge or context that led to this?`;
-          followUpQuestion = `What was the business problem or technical constraint you were facing at the time?`;
-        } else {
-          interviewerResponse = `I noted "${snippet}". Can you be more specific about what happened and what you achieved?`;
-          followUpQuestion = `Walk me through the timeline — what was the situation, what did you do, and what was the outcome?`;
-        }
+        const probeResponses = [
+          // Missing Result
+          { cond: () => missing.includes('Result'), responses: [
+            { r: `You mentioned "${snippet}" — but what happened as a result? I'm looking for measurable outcomes.`, f: `Can you quantify the impact? Revenue, time saved, adoption rate, anything concrete.` },
+            { r: `I'm curious about the ending. You touched on "${snippet}", but how do you know it was successful?`, f: `What metrics or feedback validated that your approach actually worked?` },
+            { r: `"${snippet}" is a good start. But as a hiring manager, I need to see the bottom line. What changed?`, f: `If you had to put a number on the impact, what would it be?` },
+          ]},
+          // Missing Action
+          { cond: () => missing.includes('Action'), responses: [
+            { r: `I hear "${snippet}", but I'm not clear on what you personally did. Walk me through your actions.`, f: `What specific decisions did you make, and why those over the alternatives?` },
+            { r: `You described the situation around "${snippet}", but I need to hear your individual contribution.`, f: `Break it down: what was step one that you personally initiated?` },
+            { r: `"${snippet}" — interesting context. But I want to hear about your hands-on role here.`, f: `What tools, methods, or approaches did you personally choose and why?` },
+          ]},
+          // Missing Situation
+          { cond: () => missing.includes('Situation'), responses: [
+            { r: `You went right to "${snippet}" without setting the scene. What was the context?`, f: `What was the business challenge or technical constraint driving this?` },
+            { r: `I want to understand the "why" behind "${snippet}". What problem were you solving?`, f: `Paint the picture — what was broken, at risk, or needed improvement?` },
+            { r: `Before we go further on "${snippet}", help me understand the starting point. What triggered this work?`, f: `What was at stake if the team hadn't addressed this problem?` },
+          ]},
+          // Generic low score
+          { cond: () => true, responses: [
+            { r: `I noted "${snippet}", but the answer feels thin. Can you give me a fuller picture?`, f: `Try walking through: what was the situation, what did you do, and what was the result?` },
+            { r: `"${snippet}" needs more depth. I'm looking for specifics — actions, decisions, outcomes.`, f: `Think about a concrete moment in that experience. Describe exactly what happened.` },
+            { r: `Let's unpack "${snippet}" more. Right now it's hard to assess the scope of your contribution.`, f: `What was the hardest part of this, and how did you handle it?` },
+          ]},
+        ];
+
+        const matchingPool = probeResponses.find(p => p.cond())!;
+        const pick = matchingPool.responses[turnIdx % matchingPool.responses.length];
+        interviewerResponse = pick.r;
+        followUpQuestion = pick.f;
+
       } else if (score < 75) {
-        // Mid score: clarify or deepen
         responseIntent = 'deepen';
-        if (!evaluation.rubricBreakdown?.evidence || evaluation.rubricBreakdown.evidence < 15) {
-          interviewerResponse = `Interesting — you mentioned "${snippet}". Can you put some numbers around that?`;
-          followUpQuestion = `What metrics did you use to measure success, and how did the results compare to your initial goals?`;
-        } else if (!evaluation.rubricBreakdown?.roleAlignment || evaluation.rubricBreakdown.roleAlignment < 10) {
-          interviewerResponse = `You brought up "${snippet}" — how does that experience translate to what we need for ${role}?`;
-          followUpQuestion = `What skills from that experience would you apply on day one in this role?`;
-        } else {
-          interviewerResponse = `Good detail on "${snippet}". What tradeoffs did you consider, and would you do anything differently?`;
-          followUpQuestion = `If you faced a similar situation at our company, how would you approach it differently given what you learned?`;
-        }
+        const deepenResponses = [
+          { cond: () => !evaluation.rubricBreakdown?.evidence || evaluation.rubricBreakdown.evidence < 15, responses: [
+            { r: `"${snippet}" — that's directionally right. Can you sharpen it with data?`, f: `What were the before/after numbers? How did you measure success?` },
+            { r: `I like the thread around "${snippet}", but I'd push for harder evidence.`, f: `If you were presenting this in a performance review, what metrics would you cite?` },
+            { r: `You're onto something with "${snippet}". Numbers would make this much stronger.`, f: `What KPIs were you tracking, and how did they move after your work?` },
+          ]},
+          { cond: () => !evaluation.rubricBreakdown?.roleAlignment || evaluation.rubricBreakdown.roleAlignment < 10, responses: [
+            { r: `"${snippet}" is solid experience. How would you apply that lens to ${role}?`, f: `What's the first problem you'd tackle in this role using skills from that experience?` },
+            { r: `Interesting — "${snippet}". I'm trying to connect that to what we're building for ${role}.`, f: `Where do you see the biggest overlap between that work and our challenges?` },
+            { r: `You've clearly done good work around "${snippet}". How does it prepare you for ${role} specifically?`, f: `What would you bring from that experience that our current team might be missing?` },
+          ]},
+          { cond: () => true, responses: [
+            { r: `Good detail on "${snippet}". What tradeoffs were you navigating?`, f: `If you faced a similar problem here, would you take the same approach or change something?` },
+            { r: `"${snippet}" shows solid judgment. Let me probe the decision-making a bit.`, f: `What alternatives did you consider, and why did you reject them?` },
+            { r: `I appreciate the specificity around "${snippet}". Let me go a layer deeper.`, f: `What was the biggest risk in your approach, and how did you mitigate it?` },
+            { r: `"${snippet}" — good. How did you get buy-in for this direction?`, f: `Who pushed back, and how did you convince them?` },
+          ]},
+        ];
+
+        const matchingPool = deepenResponses.find(p => p.cond())!;
+        const pick = matchingPool.responses[turnIdx % matchingPool.responses.length];
+        interviewerResponse = pick.r;
+        followUpQuestion = pick.f;
+
       } else {
-        // High score: challenge with edge cases
         responseIntent = 'challenge';
-        interviewerResponse = `Strong answer — "${snippet}" is compelling. Let me push on that a bit.`;
-        followUpQuestion = `What would you have done differently if you had half the time or budget? How would you prioritize?`;
+        const challengeResponses = [
+          { r: `Strong answer — "${snippet}" is compelling. Let me stress-test it.`, f: `What would you do differently with half the timeline or a smaller team?` },
+          { r: `That's a well-structured response. "${snippet}" stands out. But let me push.`, f: `How would this approach scale to 10x the users or a much larger codebase?` },
+          { r: `I'm impressed by "${snippet}". Now, what's the contrarian view here?`, f: `If a senior engineer argued against your approach, what would their strongest point be?` },
+          { r: `"${snippet}" — clearly strong execution. Let me test your thinking further.`, f: `What would you have done if the initial approach had failed midway through?` },
+          { r: `Really solid. "${snippet}" demonstrates clear ownership. One more angle:`, f: `How would you mentor a junior engineer to handle a similar situation?` },
+          { r: `"${snippet}" is exactly the kind of impact I want to hear about. Let me challenge you though.`, f: `What's one thing you'd do differently knowing what you know now?` },
+        ];
+
+        const pick = challengeResponses[turnIdx % challengeResponses.length];
+        interviewerResponse = pick.r;
+        followUpQuestion = pick.f;
       }
 
-      // Anti-repeat: if response is too similar to a previous one, vary it
+      // --- Anti-repeat guardrail ---
       const isTooSimilar = previousResponses.some((prev: string) => {
-        const overlap = prev.split(/\s+/).filter((w: string) => interviewerResponse.toLowerCase().includes(w.toLowerCase())).length;
-        return overlap / prev.split(/\s+/).length > 0.7;
+        if (!prev) return false;
+        const prevWords = new Set(prev.toLowerCase().split(/\s+/));
+        const curWords = interviewerResponse.toLowerCase().split(/\s+/);
+        const overlap = curWords.filter(w => prevWords.has(w) && w.length > 3).length;
+        return overlap / curWords.length > 0.6;
       });
 
       if (isTooSimilar) {
-        // Alternate phrasing
-        interviewerResponse = `Let me dig into "${snippet}" from a different angle.`;
-        followUpQuestion = `How did stakeholders react, and what resistance or support did you encounter along the way?`;
+        const fallbacks = [
+          { r: `Let me shift gears on "${snippet}".`, f: `How did stakeholders react, and what resistance did you face?` },
+          { r: `Different angle — "${snippet}" caught my attention.`, f: `What did you learn from this that changed how you work today?` },
+          { r: `I want to explore "${snippet}" from the team dynamics side.`, f: `How did you handle disagreements or differing opinions during this project?` },
+          { r: `Stepping back from "${snippet}" for a moment.`, f: `What was the most unexpected challenge, and how did you adapt?` },
+        ];
+        const fallback = fallbacks[turnIdx % fallbacks.length];
+        interviewerResponse = fallback.r;
+        followUpQuestion = fallback.f;
         responseIntent = 'clarify';
       }
 
