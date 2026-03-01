@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { TimelineStepper } from '@/components/TimelineStepper';
 import { AIActionButton } from '@/components/AIActionButton';
+import { RecruiterChat } from '@/components/RecruiterChat';
 import { mockApplications, getStageInfo } from '@/lib/mock-data';
 import { callAI } from '@/lib/ai-service';
 import { motion } from 'framer-motion';
@@ -196,6 +197,13 @@ export default function ApplicationDetail() {
           </div>
         </div>
       </div>
+
+      <RecruiterChat
+        role={app.role}
+        company={app.company}
+        stage={app.stage}
+        jobDescription={app.jobDescription}
+      />
     </Layout>
   );
 }
