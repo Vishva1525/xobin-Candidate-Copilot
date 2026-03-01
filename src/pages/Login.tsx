@@ -78,6 +78,9 @@ export default function Login() {
           <p className="text-center text-xs text-muted-foreground">
             Demo mode — enter any email to explore
           </p>
+          <p className="text-center text-xs text-muted-foreground/70">
+            Try <span className="font-medium text-muted-foreground">vishwa@demo.com</span> to see a filled demo account.
+          </p>
         </form>
 
         {/* Features */}

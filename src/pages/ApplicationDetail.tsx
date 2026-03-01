@@ -3,7 +3,8 @@ import { Layout } from '@/components/Layout';
 import { TimelineStepper } from '@/components/TimelineStepper';
 import { AIActionButton } from '@/components/AIActionButton';
 import { RecruiterChat } from '@/components/RecruiterChat';
-import { mockApplications, getStageInfo } from '@/lib/mock-data';
+import { getStageInfo } from '@/lib/mock-data';
+import { useApplications } from '@/hooks/use-applications';
 import { callAI } from '@/lib/ai-service';
 import { motion } from 'framer-motion';
 import { ArrowLeft, MapPin, Calendar, MessageSquare, Sparkles, Clock, Lightbulb } from 'lucide-react';
@@ -11,7 +12,8 @@ import { cn } from '@/lib/utils';
 
 export default function ApplicationDetail() {
   const { id } = useParams<{ id: string }>();
-  const app = mockApplications.find(a => a.id === id);
+  const { getApplication } = useApplications();
+  const app = id ? getApplication(id) : null;
 
   if (!app) {
     return (
