@@ -139,16 +139,6 @@ export default function ApplicationDetail() {
 
           <div className="space-y-3">
             <AIActionButton
-              label="Summarize job description"
-              onClick={() => callAI('stage_explainer', { jd: app.jobDescription })}
-              variant="compact"
-            >
-              {(result) => (
-                <p className="text-xs text-muted-foreground leading-relaxed">{result.explanation}</p>
-              )}
-            </AIActionButton>
-
-            <AIActionButton
               label="Likely interview topics"
               onClick={() => callAI('generate_interview_questions', { jd: app.jobDescription })}
               variant="compact"
@@ -159,20 +149,6 @@ export default function ApplicationDetail() {
                     <p key={i} className="text-xs text-muted-foreground">• {q}</p>
                   ))}
                   <p className="text-xs text-primary">+{result.behavioral.length + result.technical.length - 3} more</p>
-                </div>
-              )}
-            </AIActionButton>
-
-            <AIActionButton
-              label="Generate STAR answers"
-              description="From your resume for this role"
-              onClick={() => callAI('mock_interview_feedback', { answer: 'I led a project that improved performance by 28%...' })}
-              variant="compact"
-            >
-              {(result) => (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-foreground">Example STAR Answer</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{result.suggestedAnswer}</p>
                 </div>
               )}
             </AIActionButton>
