@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, Brain, LogOut, Sparkles, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, FileText, Brain, LogOut, Sparkles, Sun, Moon, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
 import { cn } from '@/lib/utils';
@@ -19,12 +19,12 @@ export function Sidebar() {
   return (
     <aside className="flex w-64 flex-col border-r border-sidebar-border bg-sidebar">
       {/* Brand */}
-      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-sidebar-border">
+      <Link to="/dashboard" className="flex items-center gap-2.5 px-6 py-5 border-b border-sidebar-border hover:bg-sidebar-accent/30 transition-colors">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
           <Sparkles className="h-4 w-4 text-primary" />
         </div>
         <span className="text-base font-semibold text-foreground tracking-tight">Candidate OS</span>
-      </div>
+      </Link>
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1">
@@ -78,13 +78,25 @@ export function Sidebar() {
             <p className="truncate text-sm font-medium text-sidebar-accent-foreground">{email}</p>
             <p className="text-xs text-muted-foreground">Demo Mode</p>
           </div>
-          <button
-            onClick={logout}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
-            title="Sign out"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                window.localStorage.removeItem('candidateos_email');
+                window.location.href = '/login';
+              }}
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
+              title="Switch account"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+            <button
+              onClick={logout}
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
+              title="Sign out"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
     </aside>
