@@ -92,7 +92,7 @@ export default function Dashboard() {
     <Layout>
       <div className="flex h-full">
         {/* Main content */}
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -187,7 +187,7 @@ export default function Dashboard() {
 
             {/* Trust & Transparency Widgets (for primary app) */}
             {primaryApp && (
-              <div className="grid grid-cols-3 gap-3 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                 <div className="rounded-xl border border-border bg-card p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-info/15">
@@ -223,7 +223,7 @@ export default function Dashboard() {
             {/* Next Best Actions */}
             <div className="mb-6">
               <h2 className="text-sm font-semibold text-foreground mb-3">Recommended Actions</h2>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 <Link
                   to="/resume-lab"
                   className="group rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:shadow-md transition-all"
