@@ -41,6 +41,15 @@ interface InterviewFeedback {
   rewrittenAnswer: string;
   nextQuestion: string;
   confidenceScore: number;
+  referencedSnippet?: string;
+  interviewerResponse?: string;
+}
+
+interface InterviewHistoryEntry {
+  q: string;
+  a: string;
+  followUp: string;
+  score: number;
 }
 
 function getScoreColor(score: number) {
@@ -100,6 +109,7 @@ export default function PrepStudio() {
   const [overallScore, setOverallScore] = useState(0);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [speechDone, setSpeechDone] = useState(false);
+  const [interviewHistory, setInterviewHistory] = useState<InterviewHistoryEntry[]>([]);
 
   // Voice interview state
   const [videoPhase, setVideoPhase] = useState<VideoAnswerPhase>('listening');
@@ -136,6 +146,7 @@ export default function PrepStudio() {
     setSpeechDone(false);
     setVideoPhase('listening');
     setShowTypeFallback(false);
+    setInterviewHistory([]);
     setState('interview');
   };
 
@@ -205,15 +216,43 @@ export default function PrepStudio() {
     setLoadingFeedback(false);
 
     if (currentQ < interviewQuestions.length - 1) {
-      // Interviewer speaks follow-up before next question
+      // Call interviewer_turn for a contextual follow-up
+      const turnResult = await callAI('interviewer_turn', {
+        question: interviewQuestions[currentQ],
+        candidateAnswer: editableTranscript,
+        application: { role: selectedApp.role, company: selectedApp.company, jobDescription: selectedApp.jobDescription },
+        resume: { highlights: resumeText ? resumeText.split('\n').slice(0, 5) : [] },
+        evaluation: {
+          score: fb.score,
+          rubricBreakdown: fb.rubricBreakdown,
+          strengths: fb.strengths,
+          improvements: fb.improvements,
+          missingStar: fb.starAnalysis.missing,
+        },
+        history: interviewHistory,
+      });
+
+      const snippet = turnResult.referencedSnippet || '';
+      const response = turnResult.interviewerResponse || 'Let\'s move on to the next question.';
+      const followUp = turnResult.followUpQuestion || '';
+
+      // Update feedback with snippet + response
+      fb.referencedSnippet = snippet;
+      fb.interviewerResponse = response;
+      setFeedback([...newFeedback.slice(0, -1), fb]);
+
+      // Track history
+      setInterviewHistory(prev => [...prev, {
+        q: interviewQuestions[currentQ],
+        a: editableTranscript,
+        followUp: response,
+        score: fb.score,
+      }]);
+
       setVideoPhase('followup');
-      const followupText = fb.score >= 65
-        ? `Thank you for that response. Let's move on to the next question.`
-        : `I appreciate your answer. I'd encourage you to add more specific examples next time. Let's continue.`;
+      const spokenText = followUp ? `${response} ${followUp}` : response;
+      interviewerRef.current?.speakText(spokenText);
 
-      interviewerRef.current?.speakText(followupText);
-
-      // After follow-up speech ends, advance question
       setTimeout(() => {
         setCurrentQ(prev => prev + 1);
         setAnswer('');
@@ -221,8 +260,14 @@ export default function PrepStudio() {
         setVideoPhase('listening');
         setSpeechDone(false);
         voice.reset();
-      }, followupText.split(/\s+/).length * 200 + 2000); // Estimate speech duration
+      }, spokenText.split(/\s+/).length * 200 + 2000);
     } else {
+      setInterviewHistory(prev => [...prev, {
+        q: interviewQuestions[currentQ],
+        a: editableTranscript,
+        followUp: '',
+        score: fb.score,
+      }]);
       const avg = Math.round(newFeedback.reduce((s, f) => s + f.score, 0) / newFeedback.length);
       setOverallScore(avg);
       setState('summary');
@@ -597,8 +642,14 @@ export default function PrepStudio() {
 
                         {/* Follow-up */}
                         {videoPhase === 'followup' && (
-                          <motion.div key="followup" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="py-4 text-center">
-                            <p className="text-xs text-muted-foreground">Interviewer is responding...</p>
+                          <motion.div key="followup" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="py-4 space-y-3">
+                            {feedback.length > 0 && feedback[feedback.length - 1].referencedSnippet && (
+                              <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+                                <p className="text-[10px] text-muted-foreground mb-0.5">Interviewer heard:</p>
+                                <p className="text-xs font-medium text-primary italic">"{feedback[feedback.length - 1].referencedSnippet}"</p>
+                              </div>
+                            )}
+                            <p className="text-xs text-muted-foreground text-center">Interviewer is responding...</p>
                           </motion.div>
                         )}
                       </AnimatePresence>

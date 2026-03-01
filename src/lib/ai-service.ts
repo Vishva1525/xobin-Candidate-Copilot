@@ -9,6 +9,7 @@ type AITask =
   | 'skill_gap_analysis'
   | 'generate_interview_questions'
   | 'mock_interview_feedback'
+  | 'interviewer_turn'
   | 'stage_explainer'
   | 'recruiter_followup_email'
   | 'rewrite_bullets';
@@ -299,6 +300,101 @@ Looking forward to hearing from you.
 Best regards,
 [Your Name]`,
       };
+
+    case 'interviewer_turn': {
+      const answer = payload.candidateAnswer || '';
+      const question = payload.question || '';
+      const evaluation = payload.evaluation || {};
+      const history = payload.history || [];
+      const role = payload.application?.role || 'this role';
+
+      // Extract a snippet from the candidate's answer (first meaningful phrase)
+      const sentences = answer.split(/[.!?]+/).map((s: string) => s.trim()).filter((s: string) => s.length > 8);
+      const words = answer.split(/\s+/);
+      
+      // Find the most "interesting" snippet: one with numbers, or a specific claim
+      let snippet = '';
+      const metricsMatch = answer.match(/\d+%|\d+x|\$[\d,]+|\d+\s*(users|customers|team|engineers|projects|months|weeks|days)/i);
+      if (metricsMatch) {
+        const idx = answer.indexOf(metricsMatch[0]);
+        const start = Math.max(0, answer.lastIndexOf(' ', Math.max(0, idx - 30)) + 1);
+        const end = Math.min(answer.length, answer.indexOf(' ', idx + metricsMatch[0].length + 15));
+        snippet = answer.slice(start, end > start ? end : start + 50).trim();
+      } else if (sentences.length > 0) {
+        // Pick a sentence with action verbs
+        const actionSentence = sentences.find((s: string) => /I\s+(led|built|designed|implemented|created|managed|developed|improved)/i.test(s));
+        snippet = (actionSentence || sentences[0]).slice(0, 60);
+      } else {
+        snippet = words.slice(0, Math.min(10, words.length)).join(' ');
+      }
+      if (snippet.length > 60) snippet = snippet.slice(0, 57) + '...';
+
+      const score = evaluation.score ?? 50;
+      const missing = evaluation.missingStar || evaluation.starAnalysis?.missing || [];
+      const previousResponses = history.map((h: any) => h.followUp).filter(Boolean);
+
+      // Determine response intent based on score and gaps
+      let responseIntent: string;
+      let interviewerResponse: string;
+      let followUpQuestion: string;
+
+      if (score < 55) {
+        // Low score: probe for missing STAR elements
+        responseIntent = 'probe';
+        if (missing.includes('Result')) {
+          interviewerResponse = `You mentioned "${snippet}", but I didn't hear about the outcome. What was the measurable result?`;
+          followUpQuestion = `Can you walk me through the specific impact — numbers, percentages, or business outcomes from that work?`;
+        } else if (missing.includes('Action')) {
+          interviewerResponse = `I hear the context around "${snippet}", but what did you personally do? I'd like to understand your specific contribution.`;
+          followUpQuestion = `What concrete steps did you take, and how did you decide on that approach over alternatives?`;
+        } else if (missing.includes('Situation')) {
+          interviewerResponse = `You jumped into "${snippet}" — can you set the scene? What was the challenge or context that led to this?`;
+          followUpQuestion = `What was the business problem or technical constraint you were facing at the time?`;
+        } else {
+          interviewerResponse = `I noted "${snippet}". Can you be more specific about what happened and what you achieved?`;
+          followUpQuestion = `Walk me through the timeline — what was the situation, what did you do, and what was the outcome?`;
+        }
+      } else if (score < 75) {
+        // Mid score: clarify or deepen
+        responseIntent = 'deepen';
+        if (!evaluation.rubricBreakdown?.evidence || evaluation.rubricBreakdown.evidence < 15) {
+          interviewerResponse = `Interesting — you mentioned "${snippet}". Can you put some numbers around that?`;
+          followUpQuestion = `What metrics did you use to measure success, and how did the results compare to your initial goals?`;
+        } else if (!evaluation.rubricBreakdown?.roleAlignment || evaluation.rubricBreakdown.roleAlignment < 10) {
+          interviewerResponse = `You brought up "${snippet}" — how does that experience translate to what we need for ${role}?`;
+          followUpQuestion = `What skills from that experience would you apply on day one in this role?`;
+        } else {
+          interviewerResponse = `Good detail on "${snippet}". What tradeoffs did you consider, and would you do anything differently?`;
+          followUpQuestion = `If you faced a similar situation at our company, how would you approach it differently given what you learned?`;
+        }
+      } else {
+        // High score: challenge with edge cases
+        responseIntent = 'challenge';
+        interviewerResponse = `Strong answer — "${snippet}" is compelling. Let me push on that a bit.`;
+        followUpQuestion = `What would you have done differently if you had half the time or budget? How would you prioritize?`;
+      }
+
+      // Anti-repeat: if response is too similar to a previous one, vary it
+      const isTooSimilar = previousResponses.some((prev: string) => {
+        const overlap = prev.split(/\s+/).filter((w: string) => interviewerResponse.toLowerCase().includes(w.toLowerCase())).length;
+        return overlap / prev.split(/\s+/).length > 0.7;
+      });
+
+      if (isTooSimilar) {
+        // Alternate phrasing
+        interviewerResponse = `Let me dig into "${snippet}" from a different angle.`;
+        followUpQuestion = `How did stakeholders react, and what resistance or support did you encounter along the way?`;
+        responseIntent = 'clarify';
+      }
+
+      return {
+        interviewerResponse,
+        followUpQuestion,
+        responseIntent,
+        referencedSnippet: snippet,
+        nextQuestionOverride: null,
+      };
+    }
 
     case 'rewrite_bullets':
       return {
