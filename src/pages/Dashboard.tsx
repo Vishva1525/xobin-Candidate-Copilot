@@ -2,8 +2,6 @@ import { Layout } from '@/components/Layout';
 import { ApplicationCard } from '@/components/ApplicationCard';
 import { mockApplications } from '@/lib/mock-data';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-import { callAI } from '@/lib/ai-service';
-import { AIActionButton } from '@/components/AIActionButton';
 import { motion } from 'framer-motion';
 import { Briefcase, Sparkles } from 'lucide-react';
 
