@@ -1,7 +1,9 @@
 import { useCallback } from 'react';
 import { useLocalStorage } from './use-local-storage';
-import { Application, Stage, TimelineStep } from '@/lib/types';
+import { Application, Stage, TimelineStep, StageState, GateResult } from '@/lib/types';
 import { mockApplications } from '@/lib/mock-data';
+import { generateDemoHiringPlan, createInitialStageState } from '@/lib/hiring-plan-templates';
+import { callAI } from '@/lib/ai-service';
 
 const DEMO_EMAIL = 'vishwa@demo.com';
 
@@ -29,17 +31,25 @@ function generateTimeline(stage: Stage): TimelineStep[] {
   }));
 }
 
+function addHiringPlanToMock(app: Application): Application {
+  if (app.hiringPlan) return app;
+  return {
+    ...app,
+    hiringPlan: generateDemoHiringPlan(app.role, app.jobDescription),
+    stageState: createInitialStageState(app.stage),
+  };
+}
+
 function getInitialApps(email: string): Application[] {
-  // Check localStorage first
   try {
     const stored = window.localStorage.getItem(getStorageKey(email));
     if (stored) return JSON.parse(stored);
   } catch {}
 
-  // Seed demo user
   if (email === DEMO_EMAIL) {
-    window.localStorage.setItem(getStorageKey(email), JSON.stringify(mockApplications));
-    return mockApplications;
+    const apps = mockApplications.map(addHiringPlanToMock);
+    window.localStorage.setItem(getStorageKey(email), JSON.stringify(apps));
+    return apps;
   }
 
   return [];
@@ -51,6 +61,12 @@ export function useApplications() {
   const initial = email ? getInitialApps(email) : [];
   const [applications, setApplications] = useLocalStorage<Application[]>(key, initial);
 
+  const persist = useCallback((apps: Application[]) => {
+    if (email) {
+      window.localStorage.setItem(getStorageKey(email), JSON.stringify(apps));
+    }
+  }, [email]);
+
   const addApplication = useCallback((data: {
     role: string;
     company: string;
@@ -61,6 +77,9 @@ export function useApplications() {
     deadlineDate?: string;
   }) => {
     const id = crypto.randomUUID();
+    const hiringPlan = generateDemoHiringPlan(data.role, data.jobDescription);
+    const stageState = createInitialStageState(data.stage);
+
     const newApp: Application = {
       id,
       role: data.role,
@@ -73,22 +92,88 @@ export function useApplications() {
         ? [{ label: data.deadlineLabel, date: data.deadlineDate }]
         : [],
       messages: [],
+      hiringPlan,
+      stageState,
     };
 
     setApplications(prev => {
       const updated = [...prev, newApp];
-      if (email) {
-        window.localStorage.setItem(getStorageKey(email), JSON.stringify(updated));
-      }
+      persist(updated);
       return updated;
     });
 
+    // Try to generate AI hiring plan in background (non-blocking)
+    if (data.jobDescription && data.jobDescription.length > 20) {
+      callAI('generate_hiring_plan', {
+        roleTitle: data.role,
+        jobDescription: data.jobDescription,
+      }).then(result => {
+        if (result && result.stages && !result.error) {
+          setApplications(prev => {
+            const updated = prev.map(a => a.id === id ? { ...a, hiringPlan: result } : a);
+            persist(updated);
+            return updated;
+          });
+        }
+      }).catch(() => { /* Keep deterministic plan */ });
+    }
+
     return newApp;
-  }, [email, setApplications]);
+  }, [email, setApplications, persist]);
 
   const getApplication = useCallback((id: string) => {
     return applications.find(a => a.id === id) || null;
   }, [applications]);
 
-  return { applications, addApplication, getApplication };
+  const updateApplication = useCallback((id: string, updates: Partial<Application>) => {
+    setApplications(prev => {
+      const updated = prev.map(a => a.id === id ? { ...a, ...updates } : a);
+      persist(updated);
+      return updated;
+    });
+  }, [setApplications, persist]);
+
+  const updateStageState = useCallback((appId: string, stageUpdates: Partial<StageState>) => {
+    setApplications(prev => {
+      const updated = prev.map(a => {
+        if (a.id !== appId) return a;
+        const newStageState = { ...(a.stageState || createInitialStageState(a.stage)), ...stageUpdates };
+        return { ...a, stageState: newStageState };
+      });
+      persist(updated);
+      return updated;
+    });
+  }, [setApplications, persist]);
+
+  const advanceStage = useCallback((appId: string, nextStage: Stage, gateResult: GateResult) => {
+    const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    setApplications(prev => {
+      const updated = prev.map(a => {
+        if (a.id !== appId) return a;
+        const currentStage = a.stageState?.currentStageKey || a.stage;
+        const newTimeline = a.timeline.map(step => {
+          if (step.stage === currentStage) return { ...step, completed: true, current: false, date: step.date || today };
+          if (step.stage === nextStage) return { ...step, current: true, date: today };
+          return step;
+        });
+        const newStatuses = { ...(a.stageState?.statuses || {}), [currentStage]: 'passed' as const, [nextStage]: 'in_progress' as const };
+        const newGateResults = { ...(a.stageState?.gateResults || {}), [currentStage]: gateResult };
+        return {
+          ...a,
+          stage: nextStage,
+          timeline: newTimeline,
+          stageState: {
+            ...(a.stageState || createInitialStageState(a.stage)),
+            currentStageKey: nextStage,
+            statuses: newStatuses,
+            gateResults: newGateResults,
+          },
+        };
+      });
+      persist(updated);
+      return updated;
+    });
+  }, [setApplications, persist]);
+
+  return { applications, addApplication, getApplication, updateApplication, updateStageState, advanceStage };
 }

@@ -1,4 +1,4 @@
-import { Application, Stage } from '@/lib/types';
+import { Application, Stage, StageStatus } from '@/lib/types';
 import { TimelineStepper } from './TimelineStepper';
 import { ArrowRight, MapPin, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -8,14 +8,20 @@ interface ApplicationCardProps {
   application: Application;
 }
 
-const stageCTAMap: Record<Stage, string> = {
-  applied: 'View Details',
-  assessment: 'Start Assessment',
-  'ai-interview': 'Prep Interview',
-  'recruiter-screen': 'Prepare Notes',
-  offer: 'View Offer',
-  rejected: 'View Feedback',
-};
+function getStageCTA(stage: Stage, status?: StageStatus): string {
+  if (status === 'needs_retry') return 'Retry';
+  if (status === 'passed') return 'View Results';
+  if (status === 'submitted') return 'View Evaluation';
+  const map: Record<Stage, string> = {
+    applied: 'View Details',
+    assessment: 'Start Assessment',
+    'ai-interview': 'Start Interview',
+    'recruiter-screen': 'Complete Screen',
+    offer: 'View Offer',
+    rejected: 'View Feedback',
+  };
+  return map[stage] || 'View Details';
+}
 
 const stageBadgeMap: Record<Stage, string> = {
   applied: 'bg-stage-applied/15 text-stage-applied',
@@ -72,9 +78,14 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
 
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
-          {stageCTAMap[application.stage]}
+          {getStageCTA(application.stage, application.stageState?.statuses?.[application.stageState?.currentStageKey || application.stage])}
           <ArrowRight className="h-3 w-3" />
         </span>
+        {application.stageState?.gateResults && Object.keys(application.stageState.gateResults).length > 0 && (
+          <span className="text-[10px] text-muted-foreground">
+            {Object.keys(application.stageState.gateResults).length} stage(s) evaluated
+          </span>
+        )}
       </div>
     </Link>
   );

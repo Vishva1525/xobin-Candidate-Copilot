@@ -3,12 +3,25 @@ import { Layout } from '@/components/Layout';
 import { TimelineStepper } from '@/components/TimelineStepper';
 import { AIActionButton } from '@/components/AIActionButton';
 import { RecruiterChat } from '@/components/RecruiterChat';
+import { AppliedStagePanel, AssessmentStagePanel, AIInterviewStagePanel, RecruiterScreenStagePanel, OfferStagePanel } from '@/components/StagePanels';
 import { getStageInfo } from '@/lib/mock-data';
 import { useApplications } from '@/hooks/use-applications';
 import { callAI } from '@/lib/ai-service';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, Calendar, MessageSquare, Sparkles, Clock, Lightbulb } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, MessageSquare, Sparkles, Clock, Lightbulb, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+function StagePanelRouter({ app }: { app: any }) {
+  const currentStage = app.stageState?.currentStageKey || app.stage;
+  switch (currentStage) {
+    case 'applied': return <AppliedStagePanel app={app} />;
+    case 'assessment': return <AssessmentStagePanel app={app} />;
+    case 'ai-interview': return <AIInterviewStagePanel app={app} />;
+    case 'recruiter-screen': return <RecruiterScreenStagePanel app={app} />;
+    case 'offer': return <OfferStagePanel app={app} />;
+    default: return <AppliedStagePanel app={app} />;
+  }
+}
 
 export default function ApplicationDetail() {
   const { id } = useParams<{ id: string }>();
@@ -31,6 +44,10 @@ export default function ApplicationDetail() {
   }
 
   const stageInfo = getStageInfo(app.stage);
+  const currentStage = app.stageState?.currentStageKey || app.stage;
+  const planStage = app.hiringPlan?.stages.find(s => s.key === currentStage);
+  const stageStatus = app.stageState?.statuses?.[currentStage];
+  const gateResult = app.stageState?.gateResults?.[currentStage];
 
   return (
     <Layout>
@@ -50,7 +67,21 @@ export default function ApplicationDetail() {
 
             {/* Header */}
             <div className="mb-6">
-              <h1 className="text-2xl font-bold text-foreground">{app.role}</h1>
+              <div className="flex items-center gap-3 mb-1">
+                <h1 className="text-2xl font-bold text-foreground">{app.role}</h1>
+                {stageStatus && stageStatus !== 'not_started' && (
+                  <span className={cn(
+                    'rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider',
+                    stageStatus === 'passed' ? 'bg-success/15 text-success' :
+                    stageStatus === 'needs_retry' ? 'bg-warning/15 text-warning' :
+                    stageStatus === 'failed' ? 'bg-destructive/15 text-destructive' :
+                    stageStatus === 'submitted' ? 'bg-info/15 text-info' :
+                    'bg-primary/15 text-primary'
+                  )}>
+                    {stageStatus.replace('_', ' ')}
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                 <span className="font-medium text-foreground">{app.company}</span>
                 <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{app.location}</span>
@@ -63,18 +94,40 @@ export default function ApplicationDetail() {
               <TimelineStepper steps={app.timeline} size="lg" />
             </div>
 
+            {/* Stage-specific panel */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Target className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-semibold text-foreground">
+                  {planStage?.label || stageInfo.meaning.split('.')[0]}
+                </h2>
+                {gateResult && (
+                  <span className={cn(
+                    'ml-auto rounded-full px-2.5 py-0.5 text-xs font-bold',
+                    gateResult.score >= 65 ? 'bg-success/15 text-success' :
+                    gateResult.score >= 40 ? 'bg-warning/15 text-warning' :
+                    'bg-destructive/15 text-destructive'
+                  )}>
+                    Score: {gateResult.score}
+                  </span>
+                )}
+              </div>
+              <StagePanelRouter app={app} />
+            </div>
+
             {/* Stage Info */}
             <div className="rounded-xl border border-border bg-card p-6 mb-6">
               <div className="flex items-center gap-2 mb-3">
                 <Lightbulb className="h-4 w-4 text-warning" />
                 <h2 className="text-sm font-semibold text-card-foreground">What this stage means</h2>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-3">{stageInfo.meaning}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                {planStage?.description || stageInfo.meaning}
+              </p>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4">
                 <Clock className="h-3.5 w-3.5" />
-                {stageInfo.timeline}
+                {planStage ? `Expected: ${planStage.expectedDays} business days` : stageInfo.timeline}
               </div>
-
               <div>
                 <h3 className="text-xs font-semibold text-card-foreground mb-2">What you can do now</h3>
                 <ul className="space-y-1.5">
@@ -107,28 +160,30 @@ export default function ApplicationDetail() {
             )}
 
             {/* Messages */}
-            <div className="rounded-xl border border-border bg-card p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <MessageSquare className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-semibold text-card-foreground">Messages</h2>
-              </div>
-              <div className="space-y-4">
-                {app.messages.map(msg => (
-                  <div key={msg.id} className={cn('flex', !msg.isRecruiter && 'justify-end')}>
-                    <div className={cn(
-                      'max-w-[80%] rounded-xl px-4 py-3',
-                      msg.isRecruiter
-                        ? 'bg-secondary text-secondary-foreground'
-                        : 'bg-primary/10 text-foreground'
-                    )}>
-                      <p className="text-xs font-medium mb-1">{msg.from}</p>
-                      <p className="text-sm leading-relaxed">{msg.content}</p>
-                      <p className="text-[10px] text-muted-foreground mt-1.5">{msg.date}</p>
+            {app.messages.length > 0 && (
+              <div className="rounded-xl border border-border bg-card p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <MessageSquare className="h-4 w-4 text-primary" />
+                  <h2 className="text-sm font-semibold text-card-foreground">Messages</h2>
+                </div>
+                <div className="space-y-4">
+                  {app.messages.map(msg => (
+                    <div key={msg.id} className={cn('flex', !msg.isRecruiter && 'justify-end')}>
+                      <div className={cn(
+                        'max-w-[80%] rounded-xl px-4 py-3',
+                        msg.isRecruiter
+                          ? 'bg-secondary text-secondary-foreground'
+                          : 'bg-primary/10 text-foreground'
+                      )}>
+                        <p className="text-xs font-medium mb-1">{msg.from}</p>
+                        <p className="text-sm leading-relaxed">{msg.content}</p>
+                        <p className="text-[10px] text-muted-foreground mt-1.5">{msg.date}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </motion.div>
         </div>
 
@@ -140,6 +195,25 @@ export default function ApplicationDetail() {
           </div>
 
           <div className="space-y-3">
+            {/* Role rubric */}
+            {app.hiringPlan?.roleRubric && (
+              <div className="rounded-xl border border-border bg-card p-4 mb-3">
+                <h3 className="text-xs font-semibold text-foreground mb-2">Role Evaluation Criteria</h3>
+                <div className="space-y-1.5">
+                  {app.hiringPlan.roleRubric.weightedSkills.map(s => (
+                    <div key={s.skill} className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">{s.skill}</span>
+                      <span className="text-foreground font-medium">{s.weight}%</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 pt-2 border-t border-border flex justify-between text-[10px] text-muted-foreground">
+                  <span>Pass: {app.hiringPlan.roleRubric.thresholds.pass}+</span>
+                  <span>Retry: {app.hiringPlan.roleRubric.thresholds.retry}+</span>
+                </div>
+              </div>
+            )}
+
             <AIActionButton
               label="Likely interview topics"
               onClick={() => callAI('generate_interview_questions', { jd: app.jobDescription })}
@@ -147,25 +221,25 @@ export default function ApplicationDetail() {
             >
               {(result) => (
                 <div className="space-y-2">
-                  {result.behavioral.slice(0, 3).map((q: string, i: number) => (
+                  {result.behavioral?.slice(0, 3).map((q: string, i: number) => (
                     <p key={i} className="text-xs text-muted-foreground">• {q}</p>
                   ))}
-                  <p className="text-xs text-primary">+{result.behavioral.length + result.technical.length - 3} more</p>
+                  <p className="text-xs text-primary">+{(result.behavioral?.length || 0) + (result.technical?.length || 0) - 3} more</p>
                 </div>
               )}
             </AIActionButton>
 
             <AIActionButton
-              label="Assessment tips"
+              label="Stage tips"
               description="What to expect and how to prepare"
-              onClick={() => callAI('stage_explainer', { stage: app.stage })}
+              onClick={() => callAI('stage_explainer', { stage: currentStage })}
               variant="compact"
             >
               {(result) => (
                 <div className="space-y-2">
                   <p className="text-xs text-foreground leading-relaxed">{result.whatToExpect}</p>
                   <div className="space-y-1">
-                    {result.tips.map((tip: string, i: number) => (
+                    {result.tips?.map((tip: string, i: number) => (
                       <p key={i} className="text-xs text-muted-foreground">• {tip}</p>
                     ))}
                   </div>

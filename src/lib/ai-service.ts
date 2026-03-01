@@ -8,7 +8,11 @@ type AITask =
   | 'generate_interview_questions'
   | 'mock_interview_feedback'
   | 'interviewer_turn'
-  | 'stage_explainer';
+  | 'stage_explainer'
+  | 'generate_hiring_plan'
+  | 'generate_assessment_tasks'
+  | 'evaluate_stage_gate'
+  | 'recruiter_screen_questions';
 
 export async function callAI(task: AITask, payload: Record<string, any>): Promise<any> {
   try {
@@ -82,6 +86,42 @@ function getFallbackResponse(task: AITask, payload: Record<string, any>): any {
         whatToExpect: 'You may receive an assessment or interview invitation.',
         typicalTimeline: '3-7 business days.',
         tips: ['Prepare thoroughly', 'Research the company', 'Practice common questions'],
+      };
+    case 'generate_hiring_plan':
+      // Use the deterministic template from hiring-plan-templates.ts instead
+      return null;
+    case 'generate_assessment_tasks':
+      return [];
+    case 'evaluate_stage_gate': {
+      // Deterministic scoring based on artifact content
+      const artifacts = payload.artifacts || {};
+      const values = Object.values(artifacts).filter((v: any) => typeof v === 'string' && v.trim().length > 0);
+      const avgLen = values.length > 0 ? (values as string[]).reduce((s, v) => s + v.length, 0) / values.length : 0;
+      const hasMetrics = (values as string[]).some(v => /\d+%|\d+x|\$\d|increased|reduced|improved/i.test(v));
+      const hasSTAR = (values as string[]).some(v => /situation|task|action|result/i.test(v));
+      let score = Math.min(95, 25 + Math.min(avgLen / 5, 30) + (hasMetrics ? 15 : 0) + (hasSTAR ? 15 : 0));
+      score = Math.round(score);
+      const nextStages: Record<string, string> = { assessment: 'ai-interview', 'ai-interview': 'recruiter-screen', 'recruiter-screen': 'offer' };
+      const decision = score >= 65 ? 'pass' : score >= 40 ? 'retry' : 'fail';
+      return {
+        decision,
+        score,
+        reasons: score >= 65
+          ? ['Responses show clear understanding', 'Good use of specific examples']
+          : ['Responses could use more detail', 'Add specific metrics and examples'],
+        improvements: score < 65
+          ? ['Provide more specific examples with measurable outcomes', 'Use the STAR format for behavioral responses', 'Reference relevant skills from the job description']
+          : [],
+        nextStageKey: decision === 'pass' ? (nextStages[payload.stageKey] || null) : null,
+      };
+    }
+    case 'recruiter_screen_questions':
+      return {
+        questions: (payload.focusAreas || ['Motivation', 'Team fit']).map((area: string) => ({
+          area,
+          question: `Tell me about your experience with ${area.toLowerCase()}.`,
+          followUp: `Can you give a specific example?`,
+        })),
       };
     default:
       return { error: 'Unknown task' };
