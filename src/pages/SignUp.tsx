@@ -1,16 +1,24 @@
 import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth, type AppRole } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
 import { Sparkles, ArrowRight, Sun, Moon, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 
-export default function Login() {
+const ROLES: { value: AppRole; label: string; desc: string }[] = [
+  { value: 'student', label: 'Student', desc: 'Track applications & prep with AI' },
+  { value: 'recruiter', label: 'Recruiter', desc: 'Manage jobs & review candidates' },
+];
+
+export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [role, setSelectedRole] = useState<AppRole>('student');
   const [submitting, setSubmitting] = useState(false);
-  const { user, role, signIn, loading } = useAuth();
+  const [success, setSuccess] = useState(false);
+  const { user, signUp, loading } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
 
@@ -22,21 +30,38 @@ export default function Login() {
     );
   }
 
-  if (user && role) {
-    const dest = role === 'admin' ? '/admin' : role === 'recruiter' ? '/recruiter' : '/dashboard';
-    return <Navigate to={dest} replace />;
-  }
   if (user) return <Navigate to="/dashboard" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    const { error } = await signIn(email, password);
+    const { error } = await signUp(email, password, role, displayName);
     setSubmitting(false);
     if (error) {
-      toast({ title: 'Login failed', description: error, variant: 'destructive' });
+      toast({ title: 'Sign up failed', description: error, variant: 'destructive' });
+    } else {
+      setSuccess(true);
     }
   };
+
+  if (success) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background bg-dot-pattern px-4">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 glow-primary">
+            <Sparkles className="h-6 w-6 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Check your email</h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            We sent a confirmation link to <strong className="text-foreground">{email}</strong>. Click it to activate your account.
+          </p>
+          <Link to="/login" className="text-sm font-medium text-primary hover:underline">
+            Back to Sign In
+          </Link>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-background bg-dot-pattern px-4">
@@ -56,12 +81,47 @@ export default function Login() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 glow-primary">
             <Sparkles className="h-6 w-6 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Candidate OS</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Sign in to your account</p>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Create Account</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Join Candidate OS</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+            {/* Role selection */}
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-2">I am a</label>
+              <div className="grid grid-cols-2 gap-2">
+                {ROLES.map(r => (
+                  <button
+                    key={r.value}
+                    type="button"
+                    onClick={() => setSelectedRole(r.value)}
+                    className={`rounded-lg border p-3 text-left transition-all ${
+                      role === r.value
+                        ? 'border-primary bg-primary/10 ring-1 ring-primary'
+                        : 'border-border hover:border-primary/30'
+                    }`}
+                  >
+                    <p className="text-sm font-medium text-foreground">{r.label}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{r.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="name" className="block text-xs font-medium text-muted-foreground mb-1.5">
+                Display name
+              </label>
+              <input
+                id="name"
+                type="text"
+                value={displayName}
+                onChange={e => setDisplayName(e.target.value)}
+                placeholder="Your name"
+                className="w-full rounded-lg border border-border bg-input px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
+              />
+            </div>
             <div>
               <label htmlFor="email" className="block text-xs font-medium text-muted-foreground mb-1.5">
                 Email address
@@ -99,7 +159,7 @@ export default function Login() {
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (
                 <>
-                  Sign In
+                  Create Account
                   <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
                 </>
               )}
@@ -107,30 +167,12 @@ export default function Login() {
           </div>
 
           <p className="text-center text-sm text-muted-foreground">
-            Don't have an account?{' '}
-            <Link to="/signup" className="font-medium text-primary hover:underline">
-              Sign up
+            Already have an account?{' '}
+            <Link to="/login" className="font-medium text-primary hover:underline">
+              Sign in
             </Link>
           </p>
         </form>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-          className="mt-8 grid grid-cols-3 gap-3"
-        >
-          {[
-            { label: 'Track', desc: 'Applications' },
-            { label: 'Optimize', desc: 'Your Resume' },
-            { label: 'Prepare', desc: 'Interviews' },
-          ].map(item => (
-            <div key={item.label} className="rounded-lg border border-border/50 bg-card/50 p-3 text-center">
-              <p className="text-xs font-semibold text-foreground">{item.label}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{item.desc}</p>
-            </div>
-          ))}
-        </motion.div>
       </motion.div>
     </div>
   );
