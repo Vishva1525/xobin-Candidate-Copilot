@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { ThemeProvider } from "@/hooks/use-theme";
+import { RoleContextProvider } from "@/hooks/use-role-context";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ApplicationDetail from "./pages/ApplicationDetail";
@@ -22,6 +23,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 const App = () => (
   <ThemeProvider>
+    <RoleContextProvider>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
@@ -39,6 +41,7 @@ const App = () => (
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
+    </RoleContextProvider>
   </ThemeProvider>
 );
 

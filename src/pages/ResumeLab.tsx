@@ -3,12 +3,13 @@ import { Layout } from '@/components/Layout';
 import { AIActionButton } from '@/components/AIActionButton';
 import { ResumeHealthCard } from '@/components/ResumeHealthCard';
 import { useLocalStorage } from '@/hooks/use-local-storage';
+import { useRoleContext } from '@/hooks/use-role-context';
 import { xobinApplication, sampleResumeText } from '@/lib/mock-data';
 import { callAI } from '@/lib/ai-service';
 import { extractTextFromFile } from '@/lib/resume-parser';
 import { ResumeSections, ResumeHealth, TailoredDraft } from '@/lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, FileText, Sparkles, Copy, Check, ClipboardPaste, Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Upload, FileText, Sparkles, Copy, Check, ClipboardPaste, Loader2, AlertTriangle, CheckCircle2, Compass, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -114,17 +115,21 @@ export default function ResumeLab() {
   const [resumeText, setResumeText] = useLocalStorage<string>('candidateos_resume', '');
   const [resumeSections, setResumeSections] = useLocalStorage<ResumeSections | null>('candidateos_sections', null);
   const [resumeHealth, setResumeHealth] = useLocalStorage<ResumeHealth | null>('candidateos_health', null);
-  const [tailoredDraftsByAppId, setTailoredDraftsByAppId] = useLocalStorage<Record<string, StoredDraft>>('candidateos_drafts_by_app', {});
+  const [tailoredDraftsByRoleId, setTailoredDraftsByRoleId] = useLocalStorage<Record<string, StoredDraft>>('candidateos_drafts_by_role', {});
   const [showPaste, setShowPaste] = useState(false);
   const [copied, setCopied] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [extractionError, setExtractionError] = useState<string | null>(null);
   const [actionKey, setActionKey] = useState(0);
 
-  const selectedApp = xobinApplication;
-  const selectedAppId = selectedApp.id;
+  const { activeRole, isExploring, clearExploration } = useRoleContext();
 
-  const currentDraftEntry = tailoredDraftsByAppId[selectedAppId] || null;
+  const selectedRoleId = activeRole.roleId;
+  const selectedRoleTitle = activeRole.roleTitle;
+  const selectedRoleJD = activeRole.jdFull;
+  const selectedCompany = activeRole.company;
+
+  const currentDraftEntry = tailoredDraftsByRoleId[selectedRoleId] || null;
   const tailoredDraft = currentDraftEntry?.draft || null;
 
   const processResume = useCallback(async (text: string) => {
@@ -191,7 +196,23 @@ export default function ResumeLab() {
             className="max-w-2xl"
           >
             <h1 className="text-2xl font-bold text-foreground mb-1">Resume Lab</h1>
-            <p className="text-sm text-muted-foreground mb-6">Upload your resume and let AI optimize it for each role.</p>
+            <p className="text-sm text-muted-foreground mb-2">Tailoring for: <span className="font-medium text-foreground">{selectedRoleTitle}</span> at Xobin</p>
+
+            {/* Exploration context banner */}
+            {isExploring && (
+              <div className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-2.5 mb-4 flex items-center justify-between">
+                <p className="text-xs text-warning font-medium">
+                  <Compass className="inline h-3 w-3 mr-1" />
+                  Context: Exploring <span className="font-bold">{selectedRoleTitle}</span>
+                </p>
+                <button
+                  onClick={clearExploration}
+                  className="text-xs text-warning hover:text-foreground font-medium flex items-center gap-1 transition-colors"
+                >
+                  <X className="h-3 w-3" /> Back to my application
+                </button>
+              </div>
+            )}
 
             {!hasResume ? (
               <div className="space-y-4">
@@ -329,7 +350,7 @@ export default function ResumeLab() {
 
                     {/* Reset */}
                     <button
-                      onClick={() => { setResumeText(''); setResumeSections(null); setResumeHealth(null); setTailoredDraftsByAppId({}); }}
+                      onClick={() => { setResumeText(''); setResumeSections(null); setResumeHealth(null); setTailoredDraftsByRoleId({}); }}
                       className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                     >
                       Upload a different resume
@@ -340,7 +361,7 @@ export default function ResumeLab() {
                 {/* Tailored Draft — per role */}
                 <AnimatePresence mode="wait">
                   <motion.div
-                    key={selectedAppId}
+                    key={selectedRoleId}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
@@ -352,7 +373,7 @@ export default function ResumeLab() {
                           <div>
                             <h3 className="text-sm font-semibold text-foreground">Tailored Resume Draft</h3>
                             <p className="text-[10px] text-muted-foreground mt-0.5">
-                              For {selectedApp.role} at {selectedApp.company}
+                              For {selectedRoleTitle} at {selectedCompany}
                               {currentDraftEntry?.generatedAt && (
                                 <> · Generated {new Date(currentDraftEntry.generatedAt).toLocaleString()}</>
                               )}
@@ -404,7 +425,7 @@ export default function ResumeLab() {
                       <div className="rounded-xl border border-dashed border-border bg-card/50 p-6 text-center">
                         <Sparkles className="h-5 w-5 text-muted-foreground mx-auto mb-2" />
                         <p className="text-sm text-muted-foreground">
-                          No tailored draft yet for <span className="font-medium text-foreground">{selectedApp.role}</span>
+                          No tailored draft yet for <span className="font-medium text-foreground">{selectedRoleTitle}</span>
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">Use the "Tailor my resume" action on the right →</p>
                       </div>
@@ -430,15 +451,35 @@ export default function ResumeLab() {
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Context banner — locked to single role */}
+              {/* Exploration context banner */}
+              {isExploring && (
+                <div className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 flex items-center justify-between">
+                  <p className="text-[11px] text-warning font-medium">
+                    <Compass className="inline h-3 w-3 mr-1" />
+                    Exploring: {selectedRoleTitle}
+                  </p>
+                  <button onClick={clearExploration} className="text-[11px] text-warning hover:text-foreground flex items-center gap-0.5">
+                    <X className="h-3 w-3" /> Reset
+                  </button>
+                </div>
+              )}
+
+              {/* Context banner */}
               <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
                 <div className="flex items-center gap-2">
                   <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-foreground truncate">Tailoring for: {selectedApp.role}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">at {selectedApp.company}</p>
+                    <p className="text-xs font-semibold text-foreground truncate">Tailoring for: {selectedRoleTitle}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">at {selectedCompany}</p>
                   </div>
                 </div>
+              </div>
+
+              {/* Role context switcher */}
+              <div className="rounded-lg border border-border bg-card px-3 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Role Context</p>
+                <p className="text-xs text-foreground font-medium">{selectedRoleTitle} (Xobin)</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Switch roles from the Dashboard → Explore Roles.</p>
               </div>
 
               {resumeHealth && <ResumeHealthCard health={resumeHealth} />}
@@ -446,18 +487,18 @@ export default function ResumeLab() {
               <AIActionButton
                 key={actionKey}
                 label="Tailor my resume for this role"
-                description={`Generate a draft tailored for ${selectedApp.role}`}
+                description={`Generate a draft tailored for ${selectedRoleTitle}`}
                 onClick={async () => {
                   const result = await callAI('tailor_resume_to_jd', {
                     resumeText,
-                    jd: selectedApp.jobDescription,
-                    roleTitle: selectedApp.role,
-                    company: selectedApp.company,
+                    jd: selectedRoleJD,
+                    roleTitle: selectedRoleTitle,
+                    company: selectedCompany,
                   });
 
-                  setTailoredDraftsByAppId(prev => ({
+                  setTailoredDraftsByRoleId(prev => ({
                     ...prev,
-                    [selectedAppId]: {
+                    [selectedRoleId]: {
                       draft: result,
                       generatedAt: new Date().toISOString(),
                     },
@@ -475,9 +516,9 @@ export default function ResumeLab() {
               </AIActionButton>
 
               {/* Show count of saved drafts */}
-              {Object.keys(tailoredDraftsByAppId).length > 0 && (
+              {Object.keys(tailoredDraftsByRoleId).length > 0 && (
                 <p className="text-[10px] text-muted-foreground text-center">
-                  {Object.keys(tailoredDraftsByAppId).length} role{Object.keys(tailoredDraftsByAppId).length > 1 ? 's' : ''} tailored
+                  {Object.keys(tailoredDraftsByRoleId).length} role{Object.keys(tailoredDraftsByRoleId).length > 1 ? 's' : ''} tailored
                 </p>
               )}
             </div>

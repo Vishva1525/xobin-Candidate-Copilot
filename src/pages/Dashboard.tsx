@@ -2,14 +2,16 @@ import { useState, useEffect } from 'react';
 import { Layout } from '@/components/Layout';
 import { ContactHelpModal } from '@/components/ContactHelpModal';
 import { AICompanion } from '@/components/AICompanion';
+import { ExploreRolesModal } from '@/components/ExploreRolesModal';
 import { xobinApplication, getStageInfo } from '@/lib/mock-data';
 import { callAI } from '@/lib/ai-service';
 import { useLocalStorage } from '@/hooks/use-local-storage';
+import { useRoleContext } from '@/hooks/use-role-context';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   Briefcase, FileText, Brain, MessageSquare, Clock, User, Activity, Shield,
-  Check, Zap, ArrowRight, Loader2, Sparkles, HelpCircle
+  Check, Zap, ArrowRight, Loader2, Sparkles, HelpCircle, Compass, X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -45,8 +47,10 @@ export default function Dashboard() {
   const [email] = useLocalStorage<string | null>('candidateos_email', null);
   const [resumeText] = useLocalStorage<string>('candidateos_resume', '');
   const [contactOpen, setContactOpen] = useState(false);
+  const [exploreOpen, setExploreOpen] = useState(false);
   const [insights, setInsights] = useState<DashboardInsights | null>(null);
   const [loadingInsights, setLoadingInsights] = useState(false);
+  const { activeRole, isExploring, clearExploration } = useRoleContext();
 
   const app = xobinApplication;
   const stageInfo = getStageInfo(app.stage);
@@ -93,6 +97,22 @@ export default function Dashboard() {
             transition={{ duration: 0.4 }}
             className="max-w-3xl"
           >
+            {/* Exploration Context Banner */}
+            {isExploring && (
+              <div className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-2.5 mb-4 flex items-center justify-between">
+                <p className="text-xs text-warning font-medium">
+                  <Compass className="inline h-3 w-3 mr-1" />
+                  Context: Exploring <span className="font-bold">{activeRole.roleTitle}</span>
+                </p>
+                <button
+                  onClick={clearExploration}
+                  className="text-xs text-warning hover:text-foreground font-medium flex items-center gap-1 transition-colors"
+                >
+                  <X className="h-3 w-3" /> Back to my application
+                </button>
+              </div>
+            )}
+
             {/* Hero Header */}
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-6 mb-6">
               <div className="flex items-start justify-between mb-4">
@@ -294,12 +314,32 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {/* Explore Other Roles */}
+            <div className="rounded-xl border border-border bg-card p-5 mb-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Compass className="h-4 w-4 text-primary" />
+                    <h2 className="text-sm font-semibold text-card-foreground">Explore Other Roles at Xobin</h2>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Curious about a better fit? Explore roles and tailor your resume instantly.</p>
+                </div>
+                <button
+                  onClick={() => setExploreOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:brightness-110 transition-all"
+                >
+                  <Compass className="h-3 w-3" />
+                  Explore Roles
+                </button>
+              </div>
+            </div>
+
             {/* AI Companion */}
             <AICompanion
-              role={app.role}
-              company={app.company}
+              role={activeRole.roleTitle}
+              company={activeRole.company}
               stage={app.stage}
-              jobDescription={app.jobDescription}
+              jobDescription={activeRole.jdFull}
               resumeText={resumeText}
             />
           </motion.div>
@@ -309,9 +349,14 @@ export default function Dashboard() {
       <ContactHelpModal
         open={contactOpen}
         onClose={() => setContactOpen(false)}
-        role={app.role}
-        company={app.company}
+        role={activeRole.roleTitle}
+        company={activeRole.company}
         stage={app.stage}
+      />
+
+      <ExploreRolesModal
+        open={exploreOpen}
+        onClose={() => setExploreOpen(false)}
       />
     </Layout>
   );
