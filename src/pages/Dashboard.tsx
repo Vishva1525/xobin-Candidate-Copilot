@@ -317,7 +317,7 @@ export default function Dashboard() {
         </div>
 
         {/* Right panel — AI Companion */}
-        <div className="hidden lg:block w-80 border-l border-border bg-card/30 overflow-y-auto p-4">
+        <div className="hidden lg:flex lg:flex-col w-80 border-l border-border bg-card/30">
           <AICompanion
             role={activeRole.roleTitle}
             company={activeRole.company}
