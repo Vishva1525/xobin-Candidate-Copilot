@@ -55,10 +55,10 @@ function generateStageTimeline(currentStage: string): StageTimelineEntry[] {
   });
 }
 
-// Single application for Xobin SDE
+// Single application for xobin SDE
 export const xobinApplication: Application = {
   id: 'xobin-sde',
-  company: 'Xobin',
+  company: 'xobin',
   role: 'Software Development Engineer',
   location: 'Remote',
   stage: 'assessment',
@@ -74,7 +74,7 @@ export const xobinApplication: Application = {
   typicalResponseDays: 5,
   handlerRole: 'Recruiting Coordinator',
   jobDescription: `About the Role
-We're looking for a Software Development Engineer to join our engineering team at Xobin. You'll build and enhance our AI-powered talent assessment platform used by 800+ companies worldwide.
+We're looking for a Software Development Engineer to join our engineering team at xobin. You'll build and enhance our AI-powered talent assessment platform used by 800+ companies worldwide.
 
 Responsibilities
 • Design and implement scalable backend services and APIs for the assessment platform
@@ -104,8 +104,8 @@ Nice to Have
   messages: [
     {
       id: 'm1',
-      from: 'Xobin Hiring Support',
-      content: 'Hi! Thanks for applying to the Software Development Engineer role at Xobin. We were impressed with your profile and would love to move forward with a technical assessment. You\'ll have 7 days to complete it.',
+      from: 'xobin Hiring Support',
+      content: 'Hi! Thanks for applying to the Software Development Engineer role at xobin. We were impressed with your profile and would love to move forward with a technical assessment. You\'ll have 7 days to complete it.',
       date: 'Feb 18, 2026',
       isRecruiter: true,
     },
@@ -118,7 +118,7 @@ Nice to Have
     },
     {
       id: 'm3',
-      from: 'Xobin Hiring Support',
+      from: 'xobin Hiring Support',
       content: 'Great to hear! The assessment focuses on building a small React + Node.js application. Focus on clean code, TypeScript usage, and component architecture. Good luck!',
       date: 'Feb 19, 2026',
       isRecruiter: true,
@@ -163,12 +163,12 @@ B.S. Computer Science | UC Berkeley | 2018`;
 export const getStageInfo = (stage: string) => {
   const info: Record<string, { meaning: string; timeline: string; tips: string[] }> = {
     applied: {
-      meaning: 'Your application has been submitted and is in the review queue. The Xobin hiring team will review your profile against the role requirements.',
-      timeline: 'Xobin typically responds within 3–5 business days.',
+      meaning: 'Your application has been submitted and is in the review queue. The xobin hiring team will review your profile against the role requirements.',
+      timeline: 'xobin typically responds within 3–5 business days.',
       tips: ['Keep an eye on your email for updates', 'Review the job description again', 'Prepare your portfolio or work samples'],
     },
     assessment: {
-      meaning: 'You\'ve been selected for a technical assessment. This typically involves a coding challenge on the Xobin platform.',
+      meaning: 'You\'ve been selected for a technical assessment. This typically involves a coding challenge on the xobin platform.',
       timeline: 'Assessments usually have a 7-day completion window. Results come within 3–5 business days after submission.',
       tips: ['Read all instructions carefully before starting', 'Focus on clean, well-documented code', 'Test edge cases', 'Submit early if possible'],
     },
@@ -178,17 +178,17 @@ export const getStageInfo = (stage: string) => {
       tips: ['Use the STAR method for behavioral questions', 'Speak clearly and take your time', 'Have specific examples ready', 'Test your audio/video setup beforehand'],
     },
     'recruiter-screen': {
-      meaning: 'The Xobin hiring team is reviewing your combined scores and assessment results. A recruiter may reach out for a brief conversation.',
+      meaning: 'The xobin hiring team is reviewing your combined scores and assessment results. A recruiter may reach out for a brief conversation.',
       timeline: 'Reviews are typically completed within 3–5 business days.',
-      tips: ['Research Xobin thoroughly', 'Prepare questions about the team and role', 'Know your salary expectations', 'Be ready to discuss your timeline'],
+      tips: ['Research xobin thoroughly', 'Prepare questions about the team and role', 'Know your salary expectations', 'Be ready to discuss your timeline'],
     },
     offer: {
-      meaning: 'Congratulations! Xobin wants to make you an offer. You\'ll receive details about compensation, benefits, and start date.',
+      meaning: 'Congratulations! xobin wants to make you an offer. You\'ll receive details about compensation, benefits, and start date.',
       timeline: 'Offer letters are typically sent within 2–5 business days. You usually have 1–2 weeks to decide.',
       tips: ['Review the full compensation package', 'Don\'t rush your decision', 'It\'s okay to negotiate respectfully', 'Ask about team, growth, and culture'],
     },
     rejected: {
-      meaning: 'Unfortunately, Xobin has decided not to move forward at this time. This doesn\'t reflect your worth — hiring is often about fit and timing.',
+      meaning: 'Unfortunately, xobin has decided not to move forward at this time. This doesn\'t reflect your worth — hiring is often about fit and timing.',
       timeline: 'Consider asking for feedback if none was provided.',
       tips: ['Request specific feedback for growth', 'Don\'t take it personally', 'Keep your momentum going', 'Each interview is practice for the next one'],
     },

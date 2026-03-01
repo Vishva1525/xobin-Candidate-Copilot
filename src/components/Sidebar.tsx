@@ -24,7 +24,7 @@ export function Sidebar() {
           <span className="text-sm font-bold text-primary">X</span>
         </div>
         <div>
-          <span className="text-base font-semibold text-foreground tracking-tight">Xobin</span>
+          <span className="text-base font-semibold text-foreground tracking-tight">xobin</span>
           <p className="text-[10px] text-muted-foreground leading-none">Candidate Portal</p>
         </div>
       </div>

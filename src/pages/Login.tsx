@@ -111,7 +111,7 @@ export default function Login() {
             <Plane className="h-5 w-5 text-primary-foreground" />
           </motion.div>
           <span className="text-lg font-semibold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            Xobin
+            xobin
           </span>
         </motion.div>
 
@@ -155,7 +155,7 @@ export default function Login() {
 
         {/* Footer */}
         <motion.p variants={item} className="text-xs text-muted-foreground/50">
-          © 2026 Xobin. All rights reserved.
+          © 2026 xobin. All rights reserved.
         </motion.p>
       </motion.div>
 
@@ -187,7 +187,7 @@ export default function Login() {
                 className="text-xl font-bold text-foreground"
                 style={{ fontFamily: "'Space Grotesk', sans-serif" }}
               >
-                Xobin{' '}
+                xobin{' '}
                 <span className="text-gradient">CoPilot</span>
               </h2>
               <p className="text-xs text-muted-foreground mt-1.5">Sign in to your candidate dashboard</p>
