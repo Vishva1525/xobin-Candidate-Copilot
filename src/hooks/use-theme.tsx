@@ -9,12 +9,12 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: 'dark',
+  theme: 'light',
   toggleTheme: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useLocalStorage<Theme>('candidateos_theme', 'dark');
+  const [theme, setTheme] = useLocalStorage<Theme>('candidateos_theme', 'light');
 
   useEffect(() => {
     const root = document.documentElement;
