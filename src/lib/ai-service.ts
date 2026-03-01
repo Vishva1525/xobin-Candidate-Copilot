@@ -9,7 +9,9 @@ type AITask =
   | 'mock_interview_feedback'
   | 'interviewer_turn'
   | 'stage_explainer'
-  | 'draft_follow_up_email';
+  | 'draft_follow_up_email'
+  | 'dashboard_insights'
+  | 'ai_companion_answer';
 
 export async function callAI(task: AITask, payload: Record<string, any>): Promise<any> {
   try {
@@ -87,6 +89,23 @@ function getFallbackResponse(task: AITask, payload: Record<string, any>): any {
     case 'draft_follow_up_email':
       return {
         email: `Subject: Following Up — ${payload.role || 'Application'} at ${payload.company || 'Company'}\n\nDear Hiring Team,\n\nI hope this message finds you well. I wanted to follow up on my application for the ${payload.role || 'position'} role. I remain very enthusiastic about the opportunity and would love to learn about any updates regarding the process.\n\nPlease don't hesitate to reach out if you need any additional information from my end.\n\nBest regards`,
+      };
+    case 'dashboard_insights':
+      return {
+        stageSummary: `You are currently in the ${payload.currentStage || 'assessment'} stage for the ${payload.roleTitle || 'SDE'} role at ${payload.company || 'Xobin'}.`,
+        companyBackground: 'The engineering team is reviewing submitted assessments and shortlisting candidates for the next round.',
+        nextSteps: ['Complete your technical assessment before the deadline', 'Review the job description and prepare talking points', 'Practice common interview questions in Prep Studio'],
+        recommendedActions: [
+          { label: 'Go to Resume Lab', actionKey: 'resume_lab' },
+          { label: 'Practice in Prep Studio', actionKey: 'prep_studio' },
+          { label: 'Draft a message', actionKey: 'contact' },
+        ],
+        faqSuggestions: ['What happens after the assessment?', 'How long until I hear back?', 'What does Xobin look for in candidates?'],
+      };
+    case 'ai_companion_answer':
+      return {
+        answer: `That's a great question about your ${payload.roleTitle || 'SDE'} application at ${payload.company || 'Xobin'}. Based on your current stage, I'd recommend focusing on preparation and staying patient. The hiring team typically responds within the expected timeline.`,
+        followUpSuggestions: ['What should I focus on for the assessment?', 'How can I stand out as a candidate?'],
       };
     default:
       return { error: 'Unknown task' };

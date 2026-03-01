@@ -151,6 +151,48 @@ Return a JSON object:
 
 Return ONLY valid JSON, no markdown.`;
 
+    case 'dashboard_insights':
+      return `You are a career coach providing dashboard insights for a candidate.
+
+Role: ${payload.roleTitle || 'Software Development Engineer'}
+Company: ${payload.company || 'Xobin'}
+Current Stage: ${payload.currentStage || 'assessment'}
+Job Description: ${payload.jobDescription || ''}
+Resume Summary: ${payload.resumeSummary || 'Not provided'}
+Deadlines: ${JSON.stringify(payload.deadlines || [])}
+
+Provide a concise dashboard overview for the candidate.
+
+Return a JSON object:
+{
+  "stageSummary": "2-3 sentence explanation of the current stage",
+  "companyBackground": "What the company is doing now (1-2 sentences)",
+  "nextSteps": ["step1", "step2", "step3"],
+  "recommendedActions": [{"label": "action label", "actionKey": "resume_lab|prep_studio|contact"}],
+  "faqSuggestions": ["question1", "question2", "question3"]
+}
+
+Return ONLY valid JSON, no markdown.`;
+
+    case 'ai_companion_answer':
+      return `You are an AI career companion for a candidate applying to ${payload.company || 'Xobin'} for the ${payload.roleTitle || 'Software Development Engineer'} role.
+
+Current Stage: ${payload.currentStage || 'assessment'}
+Job Description: ${payload.jobDescription || ''}
+Resume: ${payload.resumeText || 'Not provided'}
+
+The candidate asks: "${payload.userQuestion || ''}"
+
+Provide a helpful, concise answer (3-5 sentences) that is specific to their role and stage. Be encouraging but honest.
+
+Return a JSON object:
+{
+  "answer": "Your concise helpful answer",
+  "followUpSuggestions": ["follow-up question 1", "follow-up question 2"]
+}
+
+Return ONLY valid JSON, no markdown.`;
+
     default:
       return `Return: {"error": "Unknown task: ${task}"}`;
   }

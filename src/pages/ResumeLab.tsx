@@ -1,14 +1,14 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { Layout } from '@/components/Layout';
 import { AIActionButton } from '@/components/AIActionButton';
 import { ResumeHealthCard } from '@/components/ResumeHealthCard';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-import { mockApplications, sampleResumeText } from '@/lib/mock-data';
+import { xobinApplication, sampleResumeText } from '@/lib/mock-data';
 import { callAI } from '@/lib/ai-service';
 import { extractTextFromFile } from '@/lib/resume-parser';
 import { ResumeSections, ResumeHealth, TailoredDraft } from '@/lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, FileText, Sparkles, Copy, Check, ClipboardPaste, Loader2, AlertTriangle, CheckCircle2, Briefcase } from 'lucide-react';
+import { Upload, FileText, Sparkles, Copy, Check, ClipboardPaste, Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -115,35 +115,17 @@ export default function ResumeLab() {
   const [resumeSections, setResumeSections] = useLocalStorage<ResumeSections | null>('candidateos_sections', null);
   const [resumeHealth, setResumeHealth] = useLocalStorage<ResumeHealth | null>('candidateos_health', null);
   const [tailoredDraftsByAppId, setTailoredDraftsByAppId] = useLocalStorage<Record<string, StoredDraft>>('candidateos_drafts_by_app', {});
-  const [selectedAppId, setSelectedAppId] = useLocalStorage<string>('candidateos_selected_app', mockApplications[0].id);
   const [showPaste, setShowPaste] = useState(false);
   const [copied, setCopied] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [extractionError, setExtractionError] = useState<string | null>(null);
-  // Key to force-reset AIActionButton when role changes
   const [actionKey, setActionKey] = useState(0);
 
-  const selectedApp = useMemo(
-    () => mockApplications.find(a => a.id === selectedAppId) || mockApplications[0],
-    [selectedAppId]
-  );
+  const selectedApp = xobinApplication;
+  const selectedAppId = selectedApp.id;
 
   const currentDraftEntry = tailoredDraftsByAppId[selectedAppId] || null;
   const tailoredDraft = currentDraftEntry?.draft || null;
-
-  // When role changes, reset action button state and show toast
-  const handleAppChange = useCallback((newAppId: string) => {
-    if (newAppId === selectedAppId) return;
-    const app = mockApplications.find(a => a.id === newAppId);
-    setSelectedAppId(newAppId);
-    setActionKey(prev => prev + 1); // reset AIActionButton
-    if (app) {
-      toast(`Context switched to ${app.role} at ${app.company}`, {
-        icon: <Briefcase className="h-4 w-4" />,
-        duration: 2500,
-      });
-    }
-  }, [selectedAppId, setSelectedAppId]);
 
   const processResume = useCallback(async (text: string) => {
     setResumeText(text);
@@ -448,24 +430,10 @@ export default function ResumeLab() {
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Application selector */}
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Target application</label>
-                <select
-                  value={selectedAppId}
-                  onChange={(e) => handleAppChange(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
-                >
-                  {mockApplications.map(app => (
-                    <option key={app.id} value={app.id}>{app.role} — {app.company}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Context banner */}
+              {/* Context banner — locked to single role */}
               <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
                 <div className="flex items-center gap-2">
-                  <Briefcase className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-foreground truncate">Tailoring for: {selectedApp.role}</p>
                     <p className="text-[10px] text-muted-foreground truncate">at {selectedApp.company}</p>
@@ -480,22 +448,16 @@ export default function ResumeLab() {
                 label="Tailor my resume for this role"
                 description={`Generate a draft tailored for ${selectedApp.role}`}
                 onClick={async () => {
-                  // Capture current values at click time
-                  const appId = selectedAppId;
-                  const app = mockApplications.find(a => a.id === appId);
-                  if (!app) throw new Error('No application selected');
-
                   const result = await callAI('tailor_resume_to_jd', {
                     resumeText,
-                    jd: app.jobDescription,
-                    roleTitle: app.role,
-                    company: app.company,
+                    jd: selectedApp.jobDescription,
+                    roleTitle: selectedApp.role,
+                    company: selectedApp.company,
                   });
 
-                  // Store per-role
                   setTailoredDraftsByAppId(prev => ({
                     ...prev,
-                    [appId]: {
+                    [selectedAppId]: {
                       draft: result,
                       generatedAt: new Date().toISOString(),
                     },

@@ -40,11 +40,12 @@ export default function Login() {
         {/* Brand */}
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 glow-primary">
-            <Sparkles className="h-6 w-6 text-primary" />
+            <span className="text-xl font-bold text-primary">X</span>
           </div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Candidate OS</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Your AI-powered career command center
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Xobin</h1>
+          <p className="mt-1 text-sm font-medium text-muted-foreground">Candidate Portal</p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Sign in to view your application status
           </p>
         </div>
 

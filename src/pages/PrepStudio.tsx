@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Layout } from '@/components/Layout';
 import { VideoInterviewer, VideoInterviewerHandle } from '@/components/VideoInterviewer';
 import { useVoiceCapture, getDemoAnswer } from '@/hooks/use-voice-capture';
-import { mockApplications } from '@/lib/mock-data';
+import { xobinApplication } from '@/lib/mock-data';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { callAI } from '@/lib/ai-service';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -94,8 +94,8 @@ function formatTime(seconds: number) {
 }
 
 export default function PrepStudio() {
-  const [selectedAppId, setSelectedAppId] = useState(mockApplications[0].id);
   const [state, setState] = useState<InterviewState>('select');
+  const selectedApp = xobinApplication;
   const [mode, setMode] = useState<InterviewMode>('text');
   const [questions, setQuestions] = useState<any>(null);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
@@ -118,8 +118,6 @@ export default function PrepStudio() {
   const interviewerRef = useRef<VideoInterviewerHandle>(null);
 
   const voice = useVoiceCapture();
-
-  const selectedApp = mockApplications.find(a => a.id === selectedAppId)!;
   const hasResume = !!resumeText;
 
   const handleGenerateQuestions = async () => {
@@ -381,26 +379,10 @@ export default function PrepStudio() {
           {state === 'select' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
               <div className="rounded-xl border border-border bg-card p-6">
-                <h2 className="text-sm font-semibold text-card-foreground mb-3">Choose application to prepare for</h2>
-                <div className="space-y-2">
-                  {mockApplications.map(app => (
-                    <button
-                      key={app.id}
-                      onClick={() => setSelectedAppId(app.id)}
-                      className={cn(
-                        'w-full flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-all',
-                        selectedAppId === app.id
-                          ? 'border-primary/40 bg-primary/5'
-                          : 'border-border bg-card hover:border-border/80'
-                      )}
-                    >
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{app.role}</p>
-                        <p className="text-xs text-muted-foreground">{app.company} · {app.location}</p>
-                      </div>
-                      <ChevronRight className={cn('h-4 w-4', selectedAppId === app.id ? 'text-primary' : 'text-muted-foreground')} />
-                    </button>
-                  ))}
+                <h2 className="text-sm font-semibold text-card-foreground mb-3">Preparing for</h2>
+                <div className="rounded-lg border border-primary/40 bg-primary/5 px-4 py-3">
+                  <p className="text-sm font-medium text-foreground">{selectedApp.role}</p>
+                  <p className="text-xs text-muted-foreground">{selectedApp.company} · {selectedApp.location}</p>
                 </div>
                 <button
                   onClick={handleGenerateQuestions}
