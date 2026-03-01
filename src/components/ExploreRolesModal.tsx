@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Briefcase, Eye, Send, ChevronRight, Code, BarChart3, Palette, Info } from 'lucide-react';
+import { X, Eye, Send, Code, BarChart3, Palette, Info, CheckCircle2, ExternalLink } from 'lucide-react';
 import { xobinRoles, XobinRole } from '@/lib/xobin-roles';
-import { useRoleContext } from '@/hooks/use-role-context';
+import { useApplications } from '@/hooks/use-applications';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 const roleTypeConfig: Record<string, { icon: typeof Code; label: string; className: string }> = {
   tech: { icon: Code, label: 'Tech', className: 'bg-info/15 text-info' },
@@ -19,22 +20,30 @@ interface Props {
 
 export function ExploreRolesModal({ open, onClose }: Props) {
   const [viewingJD, setViewingJD] = useState<XobinRole | null>(null);
-  const { setExplorationRole, activeRole } = useRoleContext();
+  const { isRoleApplied, getApplicationForRole, applyToRole } = useApplications();
+  const navigate = useNavigate();
 
-  const handleExplore = (role: XobinRole) => {
-    setExplorationRole(role);
-    toast.success(`Now exploring: ${role.title}`, {
-      description: 'AI Copilot and Resume Lab will use this role context.',
+  const handleApply = (role: XobinRole) => {
+    const existing = getApplicationForRole(role.id);
+    if (existing) {
+      toast.info(`You've already applied — opening your application`);
+      onClose();
+      navigate(`/application/${existing.id}`);
+      return;
+    }
+    const newApp = applyToRole(role);
+    toast.success(`Applied to ${role.title}!`, {
+      description: 'A new application has been added to your dashboard.',
     });
     onClose();
   };
 
-  const handleApply = (role: XobinRole) => {
-    setExplorationRole(role);
-    toast.success(`Applied to ${role.title}!`, {
-      description: 'This role is now your active context.',
-    });
-    onClose();
+  const handleViewApplication = (roleId: string) => {
+    const app = getApplicationForRole(roleId);
+    if (app) {
+      onClose();
+      navigate(`/application/${app.id}`);
+    }
   };
 
   if (!open) return null;
@@ -85,18 +94,21 @@ export function ExploreRolesModal({ open, onClose }: Props) {
                 </div>
                 <pre className="whitespace-pre-wrap text-sm text-foreground leading-relaxed font-sans">{viewingJD.jdFull}</pre>
                 <div className="flex gap-2 pt-2">
-                  <button
-                    onClick={() => handleExplore(viewingJD)}
-                    className="flex-1 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-primary/10 transition-colors"
-                  >
-                    Explore This Role
-                  </button>
-                  <button
-                    onClick={() => handleApply(viewingJD)}
-                    className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:brightness-110 transition-all"
-                  >
-                    Apply
-                  </button>
+                  {isRoleApplied(viewingJD.id) ? (
+                    <button
+                      onClick={() => handleViewApplication(viewingJD.id)}
+                      className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:brightness-110 transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" /> View Application
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleApply(viewingJD)}
+                      className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:brightness-110 transition-all"
+                    >
+                      Apply
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (
@@ -108,10 +120,10 @@ export function ExploreRolesModal({ open, onClose }: Props) {
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">How it works</span>
                   </div>
                   {[
-                    'Exploring a role updates your AI Copilot context automatically.',
-                    'You can tailor your resume before applying.',
-                    'Applying creates a new application in your dashboard.',
-                    'Resume drafts are saved per role so you can compare versions.',
+                    'Applying creates a new application on your dashboard.',
+                    'Each application tracks its own stage and progress.',
+                    'You can tailor your resume per role in Resume Lab.',
+                    'AI Copilot context switches when you select an application.',
                   ].map((rule, i) => (
                     <p key={i} className="text-[11px] text-muted-foreground flex gap-1.5">
                       <span className="text-primary font-bold">{i + 1}.</span> {rule}
@@ -122,14 +134,14 @@ export function ExploreRolesModal({ open, onClose }: Props) {
                 {/* Role tiles */}
                 <div className="grid gap-3">
                   {xobinRoles.map(role => {
-                    const isActive = activeRole.roleId === role.id;
+                    const applied = isRoleApplied(role.id);
                     return (
                       <div
                         key={role.id}
                         className={cn(
                           'rounded-xl border p-4 transition-all',
-                          isActive
-                            ? 'border-primary/40 bg-primary/5 glow-primary-sm'
+                          applied
+                            ? 'border-success/30 bg-success/5'
                             : 'border-border bg-card hover:border-primary/20'
                         )}
                       >
@@ -137,8 +149,10 @@ export function ExploreRolesModal({ open, onClose }: Props) {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className="text-sm font-semibold text-foreground truncate">{role.title}</h3>
-                              {isActive && (
-                                <span className="text-[10px] font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5">Active</span>
+                              {applied && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-success bg-success/10 rounded-full px-2 py-0.5">
+                                  <CheckCircle2 className="h-2.5 w-2.5" /> Applied
+                                </span>
                               )}
                             </div>
                             <div className="flex items-center gap-2 mb-2">
@@ -154,19 +168,28 @@ export function ExploreRolesModal({ open, onClose }: Props) {
                             </div>
                           </div>
                           <div className="flex gap-1.5 ml-3 shrink-0">
-                            <button
-                              onClick={() => setViewingJD(role)}
-                              className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:border-primary/30 transition-colors flex items-center gap-1"
-                            >
-                              <Eye className="h-3 w-3" /> View JD
-                            </button>
-                            {!isActive && (
+                            {applied ? (
                               <button
-                                onClick={() => handleApply(role)}
+                                onClick={() => handleViewApplication(role.id)}
                                 className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:brightness-110 transition-all flex items-center gap-1"
                               >
-                                <Send className="h-3 w-3" /> Apply
+                                <ExternalLink className="h-3 w-3" /> View Application
                               </button>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => setViewingJD(role)}
+                                  className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:border-primary/30 transition-colors flex items-center gap-1"
+                                >
+                                  <Eye className="h-3 w-3" /> View JD
+                                </button>
+                                <button
+                                  onClick={() => handleApply(role)}
+                                  className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:brightness-110 transition-all flex items-center gap-1"
+                                >
+                                  <Send className="h-3 w-3" /> Apply
+                                </button>
+                              </>
                             )}
                           </div>
                         </div>

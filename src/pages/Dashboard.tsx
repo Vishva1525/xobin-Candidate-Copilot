@@ -3,10 +3,11 @@ import { Layout } from '@/components/Layout';
 import { ContactHelpModal } from '@/components/ContactHelpModal';
 import { AICompanion } from '@/components/AICompanion';
 import { ExploreRolesModal } from '@/components/ExploreRolesModal';
-import { xobinApplication, getStageInfo } from '@/lib/mock-data';
+import { getStageInfo } from '@/lib/mock-data';
 import { callAI } from '@/lib/ai-service';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { useRoleContext } from '@/hooks/use-role-context';
+import { useApplications } from '@/hooks/use-applications';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
@@ -35,6 +36,17 @@ function formatTimeAgo(isoDate: string) {
   return `${days} days ago`;
 }
 
+function mapStageToKey(stage: string): string {
+  const map: Record<string, string> = {
+    applied: 'applied',
+    assessment: 'assessment',
+    'ai-interview': 'ai_interview',
+    'recruiter-screen': 'recruiter_review',
+    offer: 'offer',
+  };
+  return map[stage] || stage;
+}
+
 interface DashboardInsights {
   stageSummary: string;
   companyBackground: string;
@@ -51,33 +63,23 @@ export default function Dashboard() {
   const [insights, setInsights] = useState<DashboardInsights | null>(null);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const { activeRole, isExploring, clearExploration } = useRoleContext();
+  const { fullApplications } = useApplications();
 
-  const app = xobinApplication;
-  const stageInfo = getStageInfo(app.stage);
-  const firstName = email?.split('@')[0] || 'there';
-
-  // Determine active stage index for stepper
-  const stageKeyMap: Record<string, string> = {
-    applied: 'applied',
-    assessment: 'assessment',
-    'ai-interview': 'ai_interview',
-    'recruiter-screen': 'recruiter_review',
-    offer: 'offer',
-  };
-  const mappedStage = stageKeyMap[app.stage] || app.stage;
-  const activeIdx = stageOrder.indexOf(mappedStage as UnifiedStageKey);
+  const primaryApp = fullApplications[0];
+  const stageInfo = getStageInfo(primaryApp?.stage || 'applied');
 
   // Load insights on mount
   useEffect(() => {
+    if (!primaryApp) return;
     let cancelled = false;
     setLoadingInsights(true);
     callAI('dashboard_insights', {
-      roleTitle: app.role,
-      company: app.company,
-      currentStage: app.stage,
-      jobDescription: app.jobDescription,
+      roleTitle: primaryApp.role,
+      company: primaryApp.company,
+      currentStage: primaryApp.stage,
+      jobDescription: primaryApp.jobDescription,
       resumeSummary: resumeText ? resumeText.slice(0, 500) : '',
-      deadlines: app.deadlines,
+      deadlines: primaryApp.deadlines,
     }).then(result => {
       if (!cancelled) setInsights(result);
     }).finally(() => {
@@ -113,104 +115,110 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Hero Header */}
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-6 mb-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground tracking-tight">
-                    Your xobin Application
-                  </h1>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Role: <span className="font-medium text-foreground">{app.role}</span>
-                  </p>
-                </div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary">
-                  <Zap className="h-3 w-3" />
-                  {stageLabels[mappedStage as UnifiedStageKey] || 'In Progress'}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                <Clock className="inline h-3 w-3 mr-1" />
-                Next update typically in {app.typicalResponseDays || 5} business days
-              </p>
-            </div>
+            {/* Applications Section */}
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-foreground tracking-tight mb-4">
+                Your Applications at xobin
+              </h1>
 
-            {/* Trust & Transparency Widgets */}
-            <div className="grid grid-cols-3 gap-3 mb-6">
-              <div className="rounded-xl border border-border bg-card p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-info/15">
-                    <User className="h-3.5 w-3.5 text-info" />
-                  </div>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Your Handler</span>
-                </div>
-                <p className="text-sm font-medium text-foreground">{app.handlerRole}</p>
-              </div>
-              <div className="rounded-xl border border-border bg-card p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-success/15">
-                    <Activity className="h-3.5 w-3.5 text-success" />
-                  </div>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Last Activity</span>
-                </div>
-                <p className="text-sm font-medium text-foreground">
-                  {app.lastActivityAt ? formatTimeAgo(app.lastActivityAt) : 'Unknown'}
-                </p>
-              </div>
-              <div className="rounded-xl border border-border bg-card p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-warning/15">
-                    <Shield className="h-3.5 w-3.5 text-warning" />
-                  </div>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Response SLA</span>
-                </div>
-                <p className="text-sm font-medium text-foreground">~{app.typicalResponseDays} business days</p>
-              </div>
-            </div>
+              <div className="grid gap-3">
+                {fullApplications.map(app => {
+                  const mapped = mapStageToKey(app.stage);
+                  const activeIdx = stageOrder.indexOf(mapped as UnifiedStageKey);
+                  const isAssessmentOrLater = activeIdx >= 2;
 
-            {/* Compact Timeline Stepper */}
-            <div className="rounded-xl border border-border bg-card p-5 mb-6">
-              <h2 className="text-sm font-semibold text-card-foreground mb-4">Application Progress</h2>
-              <div className="flex items-center gap-1">
-                {stageOrder.map((key, i) => {
-                  const isCompleted = i < activeIdx;
-                  const isActive = i === activeIdx;
                   return (
-                    <div key={key} className="flex-1 flex items-center gap-1">
-                      <div className="flex flex-col items-center flex-1">
-                        <div className={cn(
-                          'flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all',
-                          isCompleted ? 'bg-success/15 text-success' :
-                          isActive ? 'bg-primary text-primary-foreground glow-primary-sm' :
-                          'bg-muted text-muted-foreground'
-                        )}>
-                          {isCompleted ? <Check className="h-4 w-4" /> : i + 1}
+                    <Link
+                      key={app.id}
+                      to={`/application/${app.id}`}
+                      className="group block rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:border-primary/30 hover:shadow-md"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h3 className="text-base font-semibold text-card-foreground group-hover:text-primary transition-colors">
+                            {app.role}
+                          </h3>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {app.company} · {app.location}
+                          </p>
                         </div>
-                        <span className={cn(
-                          'text-[10px] mt-1.5 text-center leading-tight',
-                          isActive ? 'font-semibold text-primary' :
-                          isCompleted ? 'text-success font-medium' :
-                          'text-muted-foreground'
-                        )}>
-                          {stageLabels[key]}
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary">
+                          <Zap className="h-3 w-3" />
+                          {stageLabels[mapped as UnifiedStageKey] || 'In Progress'}
                         </span>
                       </div>
-                      {i < stageOrder.length - 1 && (
-                        <div className={cn(
-                          'h-0.5 flex-1 rounded-full mt-[-14px]',
-                          i < activeIdx ? 'bg-success' : 'bg-border'
-                        )} />
-                      )}
-                    </div>
+
+                      {/* Compact timeline */}
+                      <div className="flex items-center gap-0.5 mb-3">
+                        {stageOrder.map((key, i) => {
+                          const isCompleted = i < activeIdx;
+                          const isActive = i === activeIdx;
+                          return (
+                            <div key={key} className="flex items-center flex-1">
+                              <div className={cn(
+                                'h-1.5 flex-1 rounded-full transition-all',
+                                isCompleted ? 'bg-success' :
+                                isActive ? 'bg-primary' :
+                                'bg-border'
+                              )} />
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">
+                          {app.lastActivityAt ? formatTimeAgo(app.lastActivityAt) : ''}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {isAssessmentOrLater && (
+                            <span className="text-[10px] text-muted-foreground">Prep Studio →</span>
+                          )}
+                          <span className="text-xs font-medium text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+                            View Details <ArrowRight className="h-3 w-3" />
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
                   );
                 })}
               </div>
-              {/* What's next */}
-              <div className="mt-4 rounded-lg bg-secondary/50 p-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">What's Next</p>
-                <p className="text-xs text-foreground leading-relaxed">{stageInfo.meaning.slice(0, 150)}</p>
-              </div>
             </div>
+
+            {/* Trust & Transparency Widgets (for primary app) */}
+            {primaryApp && (
+              <div className="grid grid-cols-3 gap-3 mb-6">
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-info/15">
+                      <User className="h-3.5 w-3.5 text-info" />
+                    </div>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Your Handler</span>
+                  </div>
+                  <p className="text-sm font-medium text-foreground">{primaryApp.handlerRole}</p>
+                </div>
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-success/15">
+                      <Activity className="h-3.5 w-3.5 text-success" />
+                    </div>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Last Activity</span>
+                  </div>
+                  <p className="text-sm font-medium text-foreground">
+                    {primaryApp.lastActivityAt ? formatTimeAgo(primaryApp.lastActivityAt) : 'Unknown'}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-warning/15">
+                      <Shield className="h-3.5 w-3.5 text-warning" />
+                    </div>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Response SLA</span>
+                  </div>
+                  <p className="text-sm font-medium text-foreground">~{primaryApp.typicalResponseDays} business days</p>
+                </div>
+              </div>
+            )}
 
             {/* Next Best Actions */}
             <div className="mb-6">
@@ -218,7 +226,7 @@ export default function Dashboard() {
               <div className="grid grid-cols-3 gap-3">
                 <Link
                   to="/resume-lab"
-                  className="group rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:glow-primary-sm transition-all"
+                  className="group rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:shadow-md transition-all"
                 >
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-info/15 mb-3">
                     <FileText className="h-4 w-4 text-info" />
@@ -231,7 +239,7 @@ export default function Dashboard() {
                 </Link>
                 <Link
                   to="/prep-studio"
-                  className="group rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:glow-primary-sm transition-all"
+                  className="group rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:shadow-md transition-all"
                 >
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 mb-3">
                     <Brain className="h-4 w-4 text-primary" />
@@ -244,7 +252,7 @@ export default function Dashboard() {
                 </Link>
                 <button
                   onClick={() => setContactOpen(true)}
-                  className="group rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:glow-primary-sm transition-all text-left"
+                  className="group rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:shadow-md transition-all text-left"
                 >
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-warning/15 mb-3">
                     <MessageSquare className="h-4 w-4 text-warning" />
@@ -321,7 +329,7 @@ export default function Dashboard() {
           <AICompanion
             role={activeRole.roleTitle}
             company={activeRole.company}
-            stage={app.stage}
+            stage={primaryApp?.stage || 'applied'}
             jobDescription={activeRole.jdFull}
             resumeText={resumeText}
           />
@@ -333,7 +341,7 @@ export default function Dashboard() {
         onClose={() => setContactOpen(false)}
         role={activeRole.roleTitle}
         company={activeRole.company}
-        stage={app.stage}
+        stage={primaryApp?.stage || 'applied'}
       />
 
       <ExploreRolesModal
