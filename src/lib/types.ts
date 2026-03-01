@@ -1,6 +1,6 @@
 export type Stage = 'applied' | 'assessment' | 'ai-interview' | 'recruiter-screen' | 'offer' | 'rejected';
 
-export type StageStatus = 'not_started' | 'in_progress' | 'submitted' | 'passed' | 'failed' | 'needs_retry';
+export type StageStatus = 'not_started' | 'in_progress' | 'completed';
 
 export interface TimelineStep {
   stage: Stage;
@@ -37,10 +37,8 @@ export interface HiringPlanStage {
   label: string;
   description: string;
   expectedDays: number;
-  gateType: 'ai_evaluated' | 'completion';
   assessmentType?: string;
   tasks?: AssessmentTask[];
-  passingCriteria?: string;
   interviewStyle?: string;
   questionSet?: string[];
   screenFocusAreas?: string[];
@@ -50,7 +48,6 @@ export interface HiringPlanStage {
 
 export interface RoleRubric {
   weightedSkills: { skill: string; weight: number }[];
-  thresholds: { pass: number; retry: number };
 }
 
 export interface HiringPlan {
@@ -58,21 +55,9 @@ export interface HiringPlan {
   roleRubric: RoleRubric;
 }
 
-export interface GateResult {
-  decision: 'pass' | 'fail' | 'retry';
-  score: number;
-  reasons: string[];
-  improvements: string[];
-  nextStageKey: Stage | null;
-}
-
 export interface StageState {
   currentStageKey: Stage;
   statuses: Record<string, StageStatus>;
-  attempts: Record<string, number>;
-  artifacts: Record<string, Record<string, string>>; // stageKey -> { fieldId: value }
-  gateResults: Record<string, GateResult>;
-  lastSubmittedAt: Record<string, string>;
 }
 
 export interface Application {

@@ -1,12 +1,10 @@
 import { HiringPlan, AssessmentTask, StageState } from './types';
 
-// Detect role category from title
-function detectRoleCategory(roleTitle: string): 'technical' | 'design' | 'data' | 'general' {
+function detectRoleCategory(roleTitle: string): 'technical' | 'design' | 'data' {
   const lower = roleTitle.toLowerCase();
-  if (/front.?end|back.?end|full.?stack|software|engineer|developer|sre|devops|mobile/i.test(lower)) return 'technical';
   if (/design|ux|ui|product design|visual|creative/i.test(lower)) return 'design';
   if (/data|analyst|scientist|machine learning|ml|analytics|bi\b/i.test(lower)) return 'data';
-  return 'general';
+  return 'technical';
 }
 
 function technicalTasks(): AssessmentTask[] {
@@ -14,7 +12,7 @@ function technicalTasks(): AssessmentTask[] {
     { id: 't1', type: 'mcq', question: 'Which hook should you use to memoize expensive computations in React?', options: ['useEffect', 'useMemo', 'useCallback', 'useRef'] },
     { id: 't2', type: 'short_answer', question: 'Explain the difference between Server-Side Rendering and Static Site Generation. When would you use each?' },
     { id: 't3', type: 'coding', question: 'Write a function that debounces another function with a given delay. Include TypeScript types.', expectedFormat: 'code' },
-    { id: 't4', type: 'short_answer', question: 'How would you optimize a React application that renders 10,000 items in a list? Describe your approach.' },
+    { id: 't4', type: 'short_answer', question: 'How would you optimize a React application that renders 10,000 items in a list?' },
     { id: 't5', type: 'case_study', question: 'A page takes 8 seconds to load. Walk through your debugging and optimization process step by step.' },
   ];
 }
@@ -31,51 +29,35 @@ function designTasks(): AssessmentTask[] {
 function dataTasks(): AssessmentTask[] {
   return [
     { id: 'da1', type: 'coding', question: 'Write a SQL query to find the top 5 customers by total order value in the last 90 days, including their order count.', expectedFormat: 'sql' },
-    { id: 'da2', type: 'case_study', question: 'A product manager asks why signups dropped 15% last week. How would you investigate? Describe your analytical framework.' },
-    { id: 'da3', type: 'short_answer', question: 'Explain the difference between correlation and causation. Give a real-world example where confusing them would lead to a bad decision.' },
-    { id: 'da4', type: 'short_answer', question: 'How would you design an A/B test to measure the impact of a new onboarding flow? Include sample size considerations.' },
+    { id: 'da2', type: 'case_study', question: 'A product manager asks why signups dropped 15% last week. How would you investigate?' },
+    { id: 'da3', type: 'short_answer', question: 'Explain the difference between correlation and causation with a real-world example.' },
+    { id: 'da4', type: 'short_answer', question: 'How would you design an A/B test to measure the impact of a new onboarding flow?' },
     { id: 'da5', type: 'mcq', question: 'Which metric best measures user engagement for a SaaS product?', options: ['Page views', 'DAU/MAU ratio', 'Total signups', 'Bounce rate'] },
   ];
 }
 
-function generalTasks(): AssessmentTask[] {
-  return [
-    { id: 'g1', type: 'short_answer', question: 'Describe a time when you had to learn a new skill quickly to meet a project deadline. What was the outcome?' },
-    { id: 'g2', type: 'short_answer', question: 'How do you prioritize when you have multiple competing deadlines?' },
-    { id: 'g3', type: 'case_study', question: 'A key project is behind schedule and the team is demotivated. How would you handle this situation?' },
-  ];
-}
-
-export function generateDemoHiringPlan(roleTitle: string, jobDescription?: string): HiringPlan {
+export function generateDemoHiringPlan(roleTitle: string, _jobDescription?: string): HiringPlan {
   const category = detectRoleCategory(roleTitle);
 
   const assessmentTypeMap = {
     technical: 'Coding Challenge + System Design',
     design: 'Portfolio Review + Design Task',
     data: 'SQL + Analytics Case Study',
-    general: 'Skills Assessment',
   };
 
   const interviewStyleMap = {
     technical: 'Technical + Behavioral (system design, code review, STAR)',
     design: 'Design Critique + Portfolio Walkthrough',
     data: 'Case Study Discussion + Metrics Deep-dive',
-    general: 'Behavioral + Situational',
   };
 
   const screenFocusMap = {
-    technical: ['Architecture philosophy', 'Team collaboration', 'Growth trajectory', 'Compensation expectations'],
-    design: ['Design process', 'Cross-functional collaboration', 'Portfolio highlights', 'Compensation expectations'],
-    data: ['Analytical framework', 'Stakeholder communication', 'Tool proficiency', 'Compensation expectations'],
-    general: ['Role motivation', 'Team fit', 'Availability', 'Compensation expectations'],
+    technical: ['Project discussion', 'System tradeoffs', 'Team collaboration', 'Compensation expectations'],
+    design: ['Collaboration', 'Design process', 'Feedback handling', 'Compensation expectations'],
+    data: ['Business impact', 'Stakeholder communication', 'Analytics storytelling', 'Compensation expectations'],
   };
 
-  const taskMap = {
-    technical: technicalTasks(),
-    design: designTasks(),
-    data: dataTasks(),
-    general: generalTasks(),
-  };
+  const taskMap = { technical: technicalTasks(), design: designTasks(), data: dataTasks() };
 
   const skillsMap = {
     technical: [
@@ -99,13 +81,6 @@ export function generateDemoHiringPlan(roleTitle: string, jobDescription?: strin
       { skill: 'Communication', weight: 15 },
       { skill: 'Tool proficiency', weight: 15 },
     ],
-    general: [
-      { skill: 'Problem solving', weight: 25 },
-      { skill: 'Communication', weight: 25 },
-      { skill: 'Adaptability', weight: 20 },
-      { skill: 'Leadership', weight: 15 },
-      { skill: 'Cultural fit', weight: 15 },
-    ],
   };
 
   return {
@@ -115,54 +90,44 @@ export function generateDemoHiringPlan(roleTitle: string, jobDescription?: strin
         label: 'Applied',
         description: 'Application submitted and under review by the hiring team.',
         expectedDays: 5,
-        gateType: 'completion',
         stageObjective: 'Get your application noticed and move to evaluation.',
-        passingCriteria: 'Application reviewed and shortlisted by recruiter.',
       },
       {
         key: 'assessment',
         label: 'Assessment',
         description: `Complete the ${assessmentTypeMap[category]} to demonstrate your skills.`,
         expectedDays: 7,
-        gateType: 'ai_evaluated',
         assessmentType: assessmentTypeMap[category],
         tasks: taskMap[category],
-        stageObjective: `Demonstrate your ${category === 'technical' ? 'technical' : category === 'design' ? 'design' : category === 'data' ? 'analytical' : 'professional'} capabilities.`,
-        passingCriteria: 'Score 60+ on the assessment with clear, detailed responses.',
+        stageObjective: `Demonstrate your ${category === 'technical' ? 'technical' : category === 'design' ? 'design' : 'analytical'} capabilities.`,
       },
       {
         key: 'ai-interview',
         label: 'AI Interview',
         description: `${interviewStyleMap[category]} format interview.`,
         expectedDays: 3,
-        gateType: 'ai_evaluated',
         interviewStyle: interviewStyleMap[category],
         stageObjective: 'Demonstrate communication, problem-solving, and role fit through conversation.',
-        passingCriteria: 'Score 65+ across behavioral and role-specific questions.',
       },
       {
         key: 'recruiter-screen',
         label: 'Recruiter Screen',
         description: 'Structured conversation covering role motivation, team fit, and logistics.',
         expectedDays: 5,
-        gateType: 'ai_evaluated',
         screenFocusAreas: screenFocusMap[category],
         stageObjective: 'Demonstrate alignment with team culture and role expectations.',
-        passingCriteria: 'Clear, thoughtful responses across all focus areas.',
       },
       {
         key: 'offer',
         label: 'Offer',
         description: 'Review and respond to your offer package.',
         expectedDays: 14,
-        gateType: 'completion',
         offerChecklist: ['Review compensation package', 'Confirm start date', 'Complete background check', 'Sign offer letter'],
         stageObjective: 'Finalize your acceptance and prepare for onboarding.',
       },
     ],
     roleRubric: {
       weightedSkills: skillsMap[category],
-      thresholds: { pass: 65, retry: 40 },
     },
   };
 }
@@ -177,9 +142,5 @@ export function createInitialStageState(startStage: string = 'applied'): StageSt
   return {
     currentStageKey: startStage as any,
     statuses,
-    attempts: {},
-    artifacts: {},
-    gateResults: {},
-    lastSubmittedAt: {},
   };
 }

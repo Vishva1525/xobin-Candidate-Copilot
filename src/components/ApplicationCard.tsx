@@ -1,4 +1,4 @@
-import { Application, Stage, StageStatus } from '@/lib/types';
+import { Application, Stage } from '@/lib/types';
 import { TimelineStepper } from './TimelineStepper';
 import { ArrowRight, MapPin, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -8,15 +8,12 @@ interface ApplicationCardProps {
   application: Application;
 }
 
-function getStageCTA(stage: Stage, status?: StageStatus): string {
-  if (status === 'needs_retry') return 'Retry';
-  if (status === 'passed') return 'View Results';
-  if (status === 'submitted') return 'View Evaluation';
+function getStageCTA(stage: Stage): string {
   const map: Record<Stage, string> = {
-    applied: 'View Details',
-    assessment: 'Start Assessment',
-    'ai-interview': 'Start Interview',
-    'recruiter-screen': 'Complete Screen',
+    applied: 'View Application',
+    assessment: 'Start Assessment Prep',
+    'ai-interview': 'Start Interview Practice',
+    'recruiter-screen': 'Prepare for Recruiter Call',
     offer: 'View Offer',
     rejected: 'View Feedback',
   };
@@ -42,6 +39,8 @@ const stageLabel: Record<Stage, string> = {
 };
 
 export function ApplicationCard({ application }: ApplicationCardProps) {
+  const currentStage = application.stageState?.currentStageKey || application.stage;
+
   return (
     <Link
       to={`/application/${application.id}`}
@@ -54,8 +53,8 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
           </h3>
           <p className="text-sm text-muted-foreground mt-0.5">{application.company}</p>
         </div>
-        <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', stageBadgeMap[application.stage])}>
-          {stageLabel[application.stage]}
+        <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', stageBadgeMap[currentStage])}>
+          {stageLabel[currentStage]}
         </span>
       </div>
 
@@ -76,16 +75,11 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
         <TimelineStepper steps={application.timeline} />
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-end">
         <span className="text-xs font-medium text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
-          {getStageCTA(application.stage, application.stageState?.statuses?.[application.stageState?.currentStageKey || application.stage])}
+          {getStageCTA(currentStage)}
           <ArrowRight className="h-3 w-3" />
         </span>
-        {application.stageState?.gateResults && Object.keys(application.stageState.gateResults).length > 0 && (
-          <span className="text-[10px] text-muted-foreground">
-            {Object.keys(application.stageState.gateResults).length} stage(s) evaluated
-          </span>
-        )}
       </div>
     </Link>
   );

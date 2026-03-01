@@ -46,8 +46,6 @@ export default function ApplicationDetail() {
   const stageInfo = getStageInfo(app.stage);
   const currentStage = app.stageState?.currentStageKey || app.stage;
   const planStage = app.hiringPlan?.stages.find(s => s.key === currentStage);
-  const stageStatus = app.stageState?.statuses?.[currentStage];
-  const gateResult = app.stageState?.gateResults?.[currentStage];
 
   return (
     <Layout>
@@ -67,21 +65,7 @@ export default function ApplicationDetail() {
 
             {/* Header */}
             <div className="mb-6">
-              <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-2xl font-bold text-foreground">{app.role}</h1>
-                {stageStatus && stageStatus !== 'not_started' && (
-                  <span className={cn(
-                    'rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider',
-                    stageStatus === 'passed' ? 'bg-success/15 text-success' :
-                    stageStatus === 'needs_retry' ? 'bg-warning/15 text-warning' :
-                    stageStatus === 'failed' ? 'bg-destructive/15 text-destructive' :
-                    stageStatus === 'submitted' ? 'bg-info/15 text-info' :
-                    'bg-primary/15 text-primary'
-                  )}>
-                    {stageStatus.replace('_', ' ')}
-                  </span>
-                )}
-              </div>
+              <h1 className="text-2xl font-bold text-foreground">{app.role}</h1>
               <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                 <span className="font-medium text-foreground">{app.company}</span>
                 <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{app.location}</span>
@@ -101,16 +85,6 @@ export default function ApplicationDetail() {
                 <h2 className="text-sm font-semibold text-foreground">
                   {planStage?.label || stageInfo.meaning.split('.')[0]}
                 </h2>
-                {gateResult && (
-                  <span className={cn(
-                    'ml-auto rounded-full px-2.5 py-0.5 text-xs font-bold',
-                    gateResult.score >= 65 ? 'bg-success/15 text-success' :
-                    gateResult.score >= 40 ? 'bg-warning/15 text-warning' :
-                    'bg-destructive/15 text-destructive'
-                  )}>
-                    Score: {gateResult.score}
-                  </span>
-                )}
               </div>
               <StagePanelRouter app={app} />
             </div>
@@ -195,10 +169,10 @@ export default function ApplicationDetail() {
           </div>
 
           <div className="space-y-3">
-            {/* Role rubric */}
+            {/* Role skills */}
             {app.hiringPlan?.roleRubric && (
               <div className="rounded-xl border border-border bg-card p-4 mb-3">
-                <h3 className="text-xs font-semibold text-foreground mb-2">Role Evaluation Criteria</h3>
+                <h3 className="text-xs font-semibold text-foreground mb-2">Key Skills for This Role</h3>
                 <div className="space-y-1.5">
                   {app.hiringPlan.roleRubric.weightedSkills.map(s => (
                     <div key={s.skill} className="flex items-center justify-between text-xs">
@@ -206,10 +180,6 @@ export default function ApplicationDetail() {
                       <span className="text-foreground font-medium">{s.weight}%</span>
                     </div>
                   ))}
-                </div>
-                <div className="mt-2 pt-2 border-t border-border flex justify-between text-[10px] text-muted-foreground">
-                  <span>Pass: {app.hiringPlan.roleRubric.thresholds.pass}+</span>
-                  <span>Retry: {app.hiringPlan.roleRubric.thresholds.retry}+</span>
                 </div>
               </div>
             )}
