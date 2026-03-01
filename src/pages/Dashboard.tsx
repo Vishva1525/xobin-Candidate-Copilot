@@ -2,17 +2,17 @@ import { useState } from 'react';
 import { Layout } from '@/components/Layout';
 import { ApplicationCard } from '@/components/ApplicationCard';
 import { CreateApplicationWizard } from '@/components/CreateApplicationWizard';
-import { useLocalStorage } from '@/hooks/use-local-storage';
+import { useAuth } from '@/hooks/use-auth';
 import { useApplications } from '@/hooks/use-applications';
 import { motion } from 'framer-motion';
 import { Briefcase, Sparkles, Plus, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Dashboard() {
-  const [email] = useLocalStorage<string | null>('candidateos_email', null);
+  const { user } = useAuth();
   const { applications } = useApplications();
   const [wizardOpen, setWizardOpen] = useState(false);
-  const firstName = email?.split('@')[0] || 'there';
+  const firstName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'there';
 
   const hasApps = applications.length > 0;
   const inProgress = applications.filter(a => a.stage !== 'rejected' && a.stage !== 'offer').length;
@@ -89,7 +89,6 @@ export default function Dashboard() {
                 </div>
               </>
             ) : (
-              /* Empty state */
               <motion.div
                 initial={{ opacity: 0, scale: 0.97 }}
                 animate={{ opacity: 1, scale: 1 }}

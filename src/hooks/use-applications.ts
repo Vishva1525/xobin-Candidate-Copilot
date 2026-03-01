@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useLocalStorage } from './use-local-storage';
+import { useAuth } from './use-auth';
 import { Application, Stage, StageState } from '@/lib/types';
 import { mockApplications } from '@/lib/mock-data';
 import { generateDemoHiringPlan, createInitialStageState } from '@/lib/hiring-plan-templates';
@@ -52,7 +53,8 @@ function getInitialApps(email: string): Application[] {
 }
 
 export function useApplications() {
-  const [email] = useLocalStorage<string | null>('candidateos_email', null);
+  const { user } = useAuth();
+  const email = user?.email || null;
   const key = email ? getStorageKey(email) : 'candidateOS:_none_:applications';
   const initial = email ? getInitialApps(email) : [];
   const [applications, setApplications] = useLocalStorage<Application[]>(key, initial);
