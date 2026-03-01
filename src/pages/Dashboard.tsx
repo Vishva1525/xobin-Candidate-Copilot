@@ -294,26 +294,6 @@ export default function Dashboard() {
               ) : null}
             </div>
 
-            {/* Need Help */}
-            <div className="rounded-xl border border-border bg-card p-5 mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <HelpCircle className="h-4 w-4 text-warning" />
-                <h2 className="text-sm font-semibold text-card-foreground">Need Help?</h2>
-              </div>
-              <p className="text-xs text-muted-foreground mb-3">
-                Questions about your application? Contact the Xobin Hiring Support Team.
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setContactOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:brightness-110 transition-all"
-                >
-                  <MessageSquare className="h-3 w-3" />
-                  Draft Message with AI
-                </button>
-              </div>
-            </div>
-
             {/* Explore Other Roles */}
             <div className="rounded-xl border border-border bg-card p-5 mb-6">
               <div className="flex items-center justify-between">
@@ -333,16 +313,18 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
-
-            {/* AI Companion */}
-            <AICompanion
-              role={activeRole.roleTitle}
-              company={activeRole.company}
-              stage={app.stage}
-              jobDescription={activeRole.jdFull}
-              resumeText={resumeText}
-            />
           </motion.div>
+        </div>
+
+        {/* Right panel — AI Companion */}
+        <div className="hidden lg:block w-80 border-l border-border bg-card/30 overflow-y-auto p-4">
+          <AICompanion
+            role={activeRole.roleTitle}
+            company={activeRole.company}
+            stage={app.stage}
+            jobDescription={activeRole.jdFull}
+            resumeText={resumeText}
+          />
         </div>
       </div>
 
