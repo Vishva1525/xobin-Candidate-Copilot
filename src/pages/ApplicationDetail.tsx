@@ -3,30 +3,15 @@ import { Layout } from '@/components/Layout';
 import { TimelineStepper } from '@/components/TimelineStepper';
 import { AIActionButton } from '@/components/AIActionButton';
 import { RecruiterChat } from '@/components/RecruiterChat';
-import { AppliedStagePanel, AssessmentStagePanel, AIInterviewStagePanel, RecruiterScreenStagePanel, OfferStagePanel } from '@/components/StagePanels';
-import { getStageInfo } from '@/lib/mock-data';
-import { useApplications } from '@/hooks/use-applications';
+import { mockApplications, getStageInfo } from '@/lib/mock-data';
 import { callAI } from '@/lib/ai-service';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, Calendar, MessageSquare, Sparkles, Clock, Lightbulb, Target } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, MessageSquare, Sparkles, Clock, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-function StagePanelRouter({ app }: { app: any }) {
-  const currentStage = app.stageState?.currentStageKey || app.stage;
-  switch (currentStage) {
-    case 'applied': return <AppliedStagePanel app={app} />;
-    case 'assessment': return <AssessmentStagePanel app={app} />;
-    case 'ai-interview': return <AIInterviewStagePanel app={app} />;
-    case 'recruiter-screen': return <RecruiterScreenStagePanel app={app} />;
-    case 'offer': return <OfferStagePanel app={app} />;
-    default: return <AppliedStagePanel app={app} />;
-  }
-}
 
 export default function ApplicationDetail() {
   const { id } = useParams<{ id: string }>();
-  const { getApplication } = useApplications();
-  const app = id ? getApplication(id) : null;
+  const app = mockApplications.find(a => a.id === id);
 
   if (!app) {
     return (
@@ -44,8 +29,6 @@ export default function ApplicationDetail() {
   }
 
   const stageInfo = getStageInfo(app.stage);
-  const currentStage = app.stageState?.currentStageKey || app.stage;
-  const planStage = app.hiringPlan?.stages.find(s => s.key === currentStage);
 
   return (
     <Layout>
@@ -78,30 +61,18 @@ export default function ApplicationDetail() {
               <TimelineStepper steps={app.timeline} size="lg" />
             </div>
 
-            {/* Stage-specific panel */}
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Target className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-semibold text-foreground">
-                  {planStage?.label || stageInfo.meaning.split('.')[0]}
-                </h2>
-              </div>
-              <StagePanelRouter app={app} />
-            </div>
-
             {/* Stage Info */}
             <div className="rounded-xl border border-border bg-card p-6 mb-6">
               <div className="flex items-center gap-2 mb-3">
                 <Lightbulb className="h-4 w-4 text-warning" />
                 <h2 className="text-sm font-semibold text-card-foreground">What this stage means</h2>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-3">
-                {planStage?.description || stageInfo.meaning}
-              </p>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-3">{stageInfo.meaning}</p>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4">
                 <Clock className="h-3.5 w-3.5" />
-                {planStage ? `Expected: ${planStage.expectedDays} business days` : stageInfo.timeline}
+                {stageInfo.timeline}
               </div>
+
               <div>
                 <h3 className="text-xs font-semibold text-card-foreground mb-2">What you can do now</h3>
                 <ul className="space-y-1.5">
@@ -134,30 +105,28 @@ export default function ApplicationDetail() {
             )}
 
             {/* Messages */}
-            {app.messages.length > 0 && (
-              <div className="rounded-xl border border-border bg-card p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <MessageSquare className="h-4 w-4 text-primary" />
-                  <h2 className="text-sm font-semibold text-card-foreground">Messages</h2>
-                </div>
-                <div className="space-y-4">
-                  {app.messages.map(msg => (
-                    <div key={msg.id} className={cn('flex', !msg.isRecruiter && 'justify-end')}>
-                      <div className={cn(
-                        'max-w-[80%] rounded-xl px-4 py-3',
-                        msg.isRecruiter
-                          ? 'bg-secondary text-secondary-foreground'
-                          : 'bg-primary/10 text-foreground'
-                      )}>
-                        <p className="text-xs font-medium mb-1">{msg.from}</p>
-                        <p className="text-sm leading-relaxed">{msg.content}</p>
-                        <p className="text-[10px] text-muted-foreground mt-1.5">{msg.date}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            <div className="rounded-xl border border-border bg-card p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <MessageSquare className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-semibold text-card-foreground">Messages</h2>
               </div>
-            )}
+              <div className="space-y-4">
+                {app.messages.map(msg => (
+                  <div key={msg.id} className={cn('flex', !msg.isRecruiter && 'justify-end')}>
+                    <div className={cn(
+                      'max-w-[80%] rounded-xl px-4 py-3',
+                      msg.isRecruiter
+                        ? 'bg-secondary text-secondary-foreground'
+                        : 'bg-primary/10 text-foreground'
+                    )}>
+                      <p className="text-xs font-medium mb-1">{msg.from}</p>
+                      <p className="text-sm leading-relaxed">{msg.content}</p>
+                      <p className="text-[10px] text-muted-foreground mt-1.5">{msg.date}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </motion.div>
         </div>
 
@@ -169,21 +138,6 @@ export default function ApplicationDetail() {
           </div>
 
           <div className="space-y-3">
-            {/* Role skills */}
-            {app.hiringPlan?.roleRubric && (
-              <div className="rounded-xl border border-border bg-card p-4 mb-3">
-                <h3 className="text-xs font-semibold text-foreground mb-2">Key Skills for This Role</h3>
-                <div className="space-y-1.5">
-                  {app.hiringPlan.roleRubric.weightedSkills.map(s => (
-                    <div key={s.skill} className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">{s.skill}</span>
-                      <span className="text-foreground font-medium">{s.weight}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             <AIActionButton
               label="Likely interview topics"
               onClick={() => callAI('generate_interview_questions', { jd: app.jobDescription })}
@@ -191,25 +145,25 @@ export default function ApplicationDetail() {
             >
               {(result) => (
                 <div className="space-y-2">
-                  {result.behavioral?.slice(0, 3).map((q: string, i: number) => (
+                  {result.behavioral.slice(0, 3).map((q: string, i: number) => (
                     <p key={i} className="text-xs text-muted-foreground">• {q}</p>
                   ))}
-                  <p className="text-xs text-primary">+{(result.behavioral?.length || 0) + (result.technical?.length || 0) - 3} more</p>
+                  <p className="text-xs text-primary">+{result.behavioral.length + result.technical.length - 3} more</p>
                 </div>
               )}
             </AIActionButton>
 
             <AIActionButton
-              label="Stage tips"
+              label="Assessment tips"
               description="What to expect and how to prepare"
-              onClick={() => callAI('stage_explainer', { stage: currentStage })}
+              onClick={() => callAI('stage_explainer', { stage: app.stage })}
               variant="compact"
             >
               {(result) => (
                 <div className="space-y-2">
                   <p className="text-xs text-foreground leading-relaxed">{result.whatToExpect}</p>
                   <div className="space-y-1">
-                    {result.tips?.map((tip: string, i: number) => (
+                    {result.tips.map((tip: string, i: number) => (
                       <p key={i} className="text-xs text-muted-foreground">• {tip}</p>
                     ))}
                   </div>

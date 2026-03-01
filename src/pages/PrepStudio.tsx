@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Layout } from '@/components/Layout';
 import { VideoInterviewer, VideoInterviewerHandle } from '@/components/VideoInterviewer';
 import { useVoiceCapture, getDemoAnswer } from '@/hooks/use-voice-capture';
-import { useApplications } from '@/hooks/use-applications';
+import { mockApplications } from '@/lib/mock-data';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { callAI } from '@/lib/ai-service';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -94,8 +94,7 @@ function formatTime(seconds: number) {
 }
 
 export default function PrepStudio() {
-  const { applications } = useApplications();
-  const [selectedAppId, setSelectedAppId] = useState(applications[0]?.id || '');
+  const [selectedAppId, setSelectedAppId] = useState(mockApplications[0].id);
   const [state, setState] = useState<InterviewState>('select');
   const [mode, setMode] = useState<InterviewMode>('text');
   const [questions, setQuestions] = useState<any>(null);
@@ -120,7 +119,7 @@ export default function PrepStudio() {
 
   const voice = useVoiceCapture();
 
-  const selectedApp = applications.find(a => a.id === selectedAppId) || applications[0];
+  const selectedApp = mockApplications.find(a => a.id === selectedAppId)!;
   const hasResume = !!resumeText;
 
   const handleGenerateQuestions = async () => {
@@ -384,7 +383,7 @@ export default function PrepStudio() {
               <div className="rounded-xl border border-border bg-card p-6">
                 <h2 className="text-sm font-semibold text-card-foreground mb-3">Choose application to prepare for</h2>
                 <div className="space-y-2">
-                  {applications.map(app => (
+                  {mockApplications.map(app => (
                     <button
                       key={app.id}
                       onClick={() => setSelectedAppId(app.id)}

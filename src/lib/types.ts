@@ -1,7 +1,5 @@
 export type Stage = 'applied' | 'assessment' | 'ai-interview' | 'recruiter-screen' | 'offer' | 'rejected';
 
-export type StageStatus = 'not_started' | 'in_progress' | 'completed';
-
 export interface TimelineStep {
   stage: Stage;
   label: string;
@@ -23,43 +21,6 @@ export interface Message {
   isRecruiter: boolean;
 }
 
-// Hiring Plan types
-export interface AssessmentTask {
-  id: string;
-  type: 'mcq' | 'short_answer' | 'case_study' | 'coding' | 'portfolio' | 'design_task';
-  question: string;
-  options?: string[]; // for MCQ
-  expectedFormat?: string;
-}
-
-export interface HiringPlanStage {
-  key: Stage;
-  label: string;
-  description: string;
-  expectedDays: number;
-  assessmentType?: string;
-  tasks?: AssessmentTask[];
-  interviewStyle?: string;
-  questionSet?: string[];
-  screenFocusAreas?: string[];
-  offerChecklist?: string[];
-  stageObjective?: string;
-}
-
-export interface RoleRubric {
-  weightedSkills: { skill: string; weight: number }[];
-}
-
-export interface HiringPlan {
-  stages: HiringPlanStage[];
-  roleRubric: RoleRubric;
-}
-
-export interface StageState {
-  currentStageKey: Stage;
-  statuses: Record<string, StageStatus>;
-}
-
 export interface Application {
   id: string;
   company: string;
@@ -70,8 +31,6 @@ export interface Application {
   jobDescription: string;
   deadlines: Deadline[];
   messages: Message[];
-  hiringPlan?: HiringPlan;
-  stageState?: StageState;
 }
 
 export interface ResumeContact {

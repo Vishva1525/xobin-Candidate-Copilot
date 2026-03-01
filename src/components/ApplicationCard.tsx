@@ -8,17 +8,14 @@ interface ApplicationCardProps {
   application: Application;
 }
 
-function getStageCTA(stage: Stage): string {
-  const map: Record<Stage, string> = {
-    applied: 'View Application',
-    assessment: 'Start Assessment Prep',
-    'ai-interview': 'Start Interview Practice',
-    'recruiter-screen': 'Prepare for Recruiter Call',
-    offer: 'View Offer',
-    rejected: 'View Feedback',
-  };
-  return map[stage] || 'View Details';
-}
+const stageCTAMap: Record<Stage, string> = {
+  applied: 'View Details',
+  assessment: 'Start Assessment',
+  'ai-interview': 'Prep Interview',
+  'recruiter-screen': 'Prepare Notes',
+  offer: 'View Offer',
+  rejected: 'View Feedback',
+};
 
 const stageBadgeMap: Record<Stage, string> = {
   applied: 'bg-stage-applied/15 text-stage-applied',
@@ -39,8 +36,6 @@ const stageLabel: Record<Stage, string> = {
 };
 
 export function ApplicationCard({ application }: ApplicationCardProps) {
-  const currentStage = application.stageState?.currentStageKey || application.stage;
-
   return (
     <Link
       to={`/application/${application.id}`}
@@ -53,8 +48,8 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
           </h3>
           <p className="text-sm text-muted-foreground mt-0.5">{application.company}</p>
         </div>
-        <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', stageBadgeMap[currentStage])}>
-          {stageLabel[currentStage]}
+        <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', stageBadgeMap[application.stage])}>
+          {stageLabel[application.stage]}
         </span>
       </div>
 
@@ -75,9 +70,9 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
         <TimelineStepper steps={application.timeline} />
       </div>
 
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
-          {getStageCTA(currentStage)}
+          {stageCTAMap[application.stage]}
           <ArrowRight className="h-3 w-3" />
         </span>
       </div>

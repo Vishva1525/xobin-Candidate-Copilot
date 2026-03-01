@@ -1,70 +1,20 @@
-import { useState, useEffect, useCallback, createContext, useContext } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import type { User, Session } from '@supabase/supabase-js';
-
-interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  signUp: (email: string, password: string, displayName?: string) => Promise<{ error: string | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signOut: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | null>(null);
+import { useLocalStorage } from './use-local-storage';
+import { useNavigate } from 'react-router-dom';
+import { useCallback } from 'react';
 
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
-}
+  const [email, setEmail] = useLocalStorage<string | null>('candidateos_email', null);
+  const navigate = useNavigate();
 
-export { AuthContext };
-export type { AuthContextType };
+  const login = useCallback((userEmail: string) => {
+    setEmail(userEmail);
+    navigate('/dashboard');
+  }, [setEmail, navigate]);
 
-export function useAuthProvider() {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const logout = useCallback(() => {
+    setEmail(null);
+    navigate('/login');
+  }, [setEmail, navigate]);
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { display_name: displayName || email.split('@')[0] },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    return { error: error?.message ?? null };
-  }, []);
-
-  const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null };
-  }, []);
-
-  const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-  }, []);
-
-  return { user, session, loading, signUp, signIn, signOut };
+  return { email, isAuthenticated: !!email, login, logout };
 }

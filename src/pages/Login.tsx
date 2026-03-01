@@ -1,44 +1,33 @@
 import { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/use-auth';
+import { useNavigate } from 'react-router-dom';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 import { useTheme } from '@/hooks/use-theme';
-import { Sparkles, ArrowRight, Sun, Moon, Loader2 } from 'lucide-react';
+import { Sparkles, ArrowRight, Sun, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useToast } from '@/hooks/use-toast';
 
 export default function Login() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const { user, signIn, loading } = useAuth();
+  const [, setStoredEmail] = useLocalStorage<string | null>('candidateos_email', null);
+  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
-  const { toast } = useToast();
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (user) return <Navigate to="/dashboard" replace />;
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
-    const { error } = await signIn(email, password);
-    setSubmitting(false);
-    if (error) {
-      toast({ title: 'Login failed', description: error, variant: 'destructive' });
+    if (email.trim()) {
+      // Write to localStorage synchronously before navigating
+      window.localStorage.setItem('candidateos_email', JSON.stringify(email.trim()));
+      setStoredEmail(email.trim());
+      navigate('/dashboard');
     }
   };
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-background bg-dot-pattern px-4">
+      {/* Theme toggle */}
       <button
         onClick={toggleTheme}
         className="absolute top-5 right-5 flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+        title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       >
         {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
       </button>
@@ -48,14 +37,18 @@ export default function Login() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-sm"
       >
+        {/* Brand */}
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 glow-primary">
             <Sparkles className="h-6 w-6 text-primary" />
           </div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Candidate OS</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Sign in to your account</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Your AI-powered career command center
+          </p>
         </div>
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="rounded-xl border border-border bg-card p-6 space-y-4">
             <div>
@@ -72,44 +65,22 @@ export default function Login() {
                 className="w-full rounded-lg border border-border bg-input px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
               />
             </div>
-            <div>
-              <label htmlFor="password" className="block text-xs font-medium text-muted-foreground mb-1.5">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                minLength={6}
-                className="w-full rounded-lg border border-border bg-input px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
-              />
-            </div>
 
             <button
               type="submit"
-              disabled={submitting}
-              className="group flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:brightness-110 glow-primary-sm disabled:opacity-50"
+              className="group flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:brightness-110 glow-primary-sm"
             >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-                <>
-                  Sign In
-                  <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
-                </>
-              )}
+              Continue to Dashboard
+              <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
             </button>
           </div>
 
-          <p className="text-center text-sm text-muted-foreground">
-            Don't have an account?{' '}
-            <Link to="/signup" className="font-medium text-primary hover:underline">
-              Sign up
-            </Link>
+          <p className="text-center text-xs text-muted-foreground">
+            Demo mode — enter any email to explore
           </p>
         </form>
 
+        {/* Features */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

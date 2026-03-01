@@ -1,4 +1,4 @@
-// AI service — calls AI via edge function for real AI responses
+// AI service — calls Gemini API via edge function for real AI responses
 
 const AI_TASKS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-tasks`;
 
@@ -8,9 +8,7 @@ type AITask =
   | 'generate_interview_questions'
   | 'mock_interview_feedback'
   | 'interviewer_turn'
-  | 'stage_explainer'
-  | 'generate_hiring_plan'
-  | 'recruiter_screen_questions';
+  | 'stage_explainer';
 
 export async function callAI(task: AITask, payload: Record<string, any>): Promise<any> {
   try {
@@ -31,10 +29,12 @@ export async function callAI(task: AITask, payload: Record<string, any>): Promis
     return await resp.json();
   } catch (e: any) {
     console.error(`AI task "${task}" failed:`, e.message);
+    // Return fallback so UI doesn't break
     return getFallbackResponse(task, payload);
   }
 }
 
+// Minimal fallback responses in case the API is unreachable
 function getFallbackResponse(task: AITask, payload: Record<string, any>): any {
   switch (task) {
     case 'parse_resume_feedback':
@@ -82,16 +82,6 @@ function getFallbackResponse(task: AITask, payload: Record<string, any>): any {
         whatToExpect: 'You may receive an assessment or interview invitation.',
         typicalTimeline: '3-7 business days.',
         tips: ['Prepare thoroughly', 'Research the company', 'Practice common questions'],
-      };
-    case 'generate_hiring_plan':
-      return null;
-    case 'recruiter_screen_questions':
-      return {
-        questions: (payload.focusAreas || ['Motivation', 'Team fit']).map((area: string) => ({
-          area,
-          question: `Tell me about your experience with ${area.toLowerCase()}.`,
-          followUp: `Can you give a specific example?`,
-        })),
       };
     default:
       return { error: 'Unknown task' };
