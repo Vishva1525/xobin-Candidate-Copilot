@@ -82,6 +82,27 @@ function parseResumeSections(text: string): ResumeSections {
   }
   if (currentExp) experience.push(currentExp);
 
+  // Fallback: if no skills found by section parsing, extract known tech skills from full text
+  if (skills.length === 0) {
+    const allText = text.toUpperCase();
+    const knownSkills = [
+      'Python', 'JavaScript', 'TypeScript', 'Java', 'C++', 'C#', 'Go', 'Rust', 'Ruby', 'PHP', 'Swift', 'Kotlin',
+      'HTML', 'CSS', 'React', 'Angular', 'Vue', 'Next.js', 'Node.js', 'Express', 'Django', 'Flask', 'Spring Boot',
+      'SQL', 'MySQL', 'PostgreSQL', 'MongoDB', 'Redis', 'Firebase', 'Supabase',
+      'AWS', 'Azure', 'GCP', 'Docker', 'Kubernetes', 'Git', 'GitHub', 'CI/CD',
+      'REST APIs', 'GraphQL', 'WebSocket',
+      'TensorFlow', 'PyTorch', 'OpenCV', 'MediaPipe', 'Scikit-learn',
+      'Figma', 'Sketch', 'Adobe XD',
+      'Linux', 'Bash', 'Terraform', 'Jenkins',
+      'Agile', 'Scrum', 'Jira',
+    ];
+    for (const skill of knownSkills) {
+      if (allText.includes(skill.toUpperCase())) {
+        skills.push(skill);
+      }
+    }
+  }
+
   return {
     contact: { name: name.trim(), email: emailMatch?.[0] || '', phone: phoneMatch?.[0] || '' },
     skills,
