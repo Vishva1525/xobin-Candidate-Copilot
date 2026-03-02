@@ -120,4 +120,11 @@ Product Philosophy
 
 Hiring should not feel like sending your resume into a black hole.
 
+Future Improvements
+
+Potential enhancements include:
+
+• recruiter feedback summaries for rejected candidates
+• Human like AI interview - contextual based on the role
+
 Xobin Candidate Co-Pilot transforms hiring into a transparent, guided, and AI-assisted journey that empowers candidates to prepare, improve, and succeed.
