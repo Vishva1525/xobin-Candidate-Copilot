@@ -55,46 +55,35 @@ const roadmapItems = [
 function RoadmapNavGroup({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
   const isRoadmapActive = location.pathname.startsWith('/roadmap');
-  const [expanded, setExpanded] = useState(isRoadmapActive);
 
   return (
     <div className="mt-2 pt-2 border-t border-sidebar-border/50">
-      <button
-        onClick={() => setExpanded(v => !v)}
-        className={cn(
-          'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150',
-          isRoadmapActive
-            ? 'text-sidebar-accent-foreground'
-            : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
-        )}
-      >
-        <Rocket className={cn('h-4 w-4', isRoadmapActive && 'text-primary')} />
-        <span className="flex-1 text-left">Coming Soon</span>
-        <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-medium text-muted-foreground">Roadmap</Badge>
-        {expanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
-      </button>
-      {expanded && (
-        <div className="ml-4 pl-3 border-l border-sidebar-border/50 mt-1 space-y-0.5">
-          {roadmapItems.map(item => {
-            const active = location.pathname === item.to;
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                onClick={onNavigate}
-                className={cn(
-                  'block rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150',
-                  active
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                    : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
-                )}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </div>
-      )}
+      <div className="flex items-center gap-2 px-3 py-2">
+        <Rocket className={cn('h-4 w-4', isRoadmapActive ? 'text-primary' : 'text-muted-foreground')} />
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Coming Soon</span>
+        <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-medium text-muted-foreground ml-auto">Roadmap</Badge>
+      </div>
+      <div className="mt-1 space-y-0.5">
+        {roadmapItems.map(item => {
+          const active = location.pathname === item.to;
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              onClick={onNavigate}
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ml-1',
+                active
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                  : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+              )}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-current opacity-40" />
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }
