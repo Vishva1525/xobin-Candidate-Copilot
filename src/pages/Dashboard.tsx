@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { Layout } from '@/components/Layout';
 import { ContactHelpModal } from '@/components/ContactHelpModal';
 import { AICompanion } from '@/components/AICompanion';
@@ -149,19 +149,16 @@ export default function Dashboard() {
                       </div>
 
                       {/* Horizontal stage timeline */}
-                      <div className="flex items-start gap-0 mb-3 overflow-x-auto">
-                        {stageOrder.map((key, i) => {
-                          const isCompleted = i < activeIdx;
-                          const isActive = i === activeIdx;
-                          const stageEntry = app.stageTimeline?.find(s => s.key === key);
-                          const eta = stageEntry?.etaText || '3–5 days';
-
-                          return (
-                            <div key={key} className="flex items-center flex-1 min-w-0">
-                              <div className="flex flex-col items-center flex-1 gap-1">
-                                {/* Node */}
+                      <div className="mb-3 overflow-x-auto">
+                        {/* Nodes + connectors row */}
+                        <div className="flex items-center">
+                          {stageOrder.map((key, i) => {
+                            const isCompleted = i < activeIdx;
+                            const isActive = i === activeIdx;
+                            return (
+                              <React.Fragment key={key}>
                                 <div className={cn(
-                                  'flex h-6 w-6 items-center justify-center rounded-full border-2 shrink-0 transition-all',
+                                  'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all',
                                   isCompleted ? 'bg-success border-success' :
                                   isActive ? 'border-primary bg-primary/10' :
                                   'border-border bg-card'
@@ -174,18 +171,35 @@ export default function Dashboard() {
                                     <div className="h-1.5 w-1.5 rounded-full bg-border" />
                                   )}
                                 </div>
-                                {/* Label */}
+                                {i < stageOrder.length - 1 && (
+                                  <div className={cn(
+                                    'h-0.5 flex-1',
+                                    isCompleted ? 'bg-success' : 'bg-border'
+                                  )} />
+                                )}
+                              </React.Fragment>
+                            );
+                          })}
+                        </div>
+                        {/* Labels + ETA row */}
+                        <div className="flex justify-between mt-1.5">
+                          {stageOrder.map((key, i) => {
+                            const isCompleted = i < activeIdx;
+                            const isActive = i === activeIdx;
+                            const stageEntry = app.stageTimeline?.find(s => s.key === key);
+                            const eta = stageEntry?.etaText || '3–5 days';
+                            return (
+                              <div key={key} className="flex flex-col items-center" style={{ width: `${100 / stageOrder.length}%` }}>
                                 <span className={cn(
-                                  'text-[9px] font-medium text-center leading-tight whitespace-nowrap',
+                                  'text-[9px] font-medium text-center leading-tight',
                                   isCompleted ? 'text-success' :
                                   isActive ? 'text-primary font-semibold' :
                                   'text-muted-foreground'
                                 )}>
                                   {stageLabels[key]}
                                 </span>
-                                {/* Status / ETA */}
                                 <span className={cn(
-                                  'text-[8px] rounded-full px-1.5 py-0.5 font-medium',
+                                  'text-[8px] rounded-full px-1.5 py-0.5 font-medium mt-0.5',
                                   isCompleted ? 'bg-success/15 text-success' :
                                   isActive ? 'bg-primary/15 text-primary' :
                                   'bg-muted text-muted-foreground'
@@ -193,16 +207,9 @@ export default function Dashboard() {
                                   {isCompleted ? '✓ Done' : isActive ? 'Active' : eta}
                                 </span>
                               </div>
-                              {/* Connector line */}
-                              {i < stageOrder.length - 1 && (
-                                <div className={cn(
-                                  'h-0.5 w-full mt-3 -mx-0.5',
-                                  isCompleted ? 'bg-success' : 'bg-border'
-                                )} />
-                              )}
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
 
                       <div className="flex items-center justify-between">
