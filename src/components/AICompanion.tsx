@@ -84,11 +84,10 @@ export function AICompanion({ role, company, stage, jobDescription, resumeText }
         {messages.length > 0 && (
           <button
             onClick={() => setMessages([])}
-            className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
             title="New chat"
           >
-            <Plus className="h-3 w-3" />
-            New Chat
+            <Plus className="h-3.5 w-3.5" />
           </button>
         )}
       </div>
