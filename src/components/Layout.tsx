@@ -46,10 +46,18 @@ const navItems = [
   { to: '/prep-studio', label: 'Prep Studio', icon: Brain },
 ];
 
-const roadmapItems = [
-  { to: '/roadmap/prep-studio', label: 'Prep Studio Roadmap' },
-  { to: '/roadmap/resume-lab', label: 'Resume Lab Roadmap' },
-  { to: '/roadmap/dashboard', label: 'Dashboard Roadmap' },
+const roadmapEnhancements = [
+  { label: 'AI Interview Replay Analytics', tag: 'Prep Studio' },
+  { label: 'Role-Specific Interview Simulations', tag: 'Prep Studio' },
+  { label: 'Interview Readiness Score', tag: 'Prep Studio' },
+  { label: 'Advanced Resume ATS Scoring', tag: 'Resume Lab' },
+  { label: 'Resume Version Management', tag: 'Resume Lab' },
+  { label: 'Skill Gap Intelligence', tag: 'Resume Lab' },
+  { label: 'Application Activity Insights', tag: 'Dashboard' },
+  { label: 'Application Health Score', tag: 'Dashboard' },
+  { label: 'AI Hiring Stage Guidance', tag: 'Dashboard' },
+  { label: 'Recruiter Feedback Summaries', tag: 'Dashboard' },
+  { label: 'AI Career Coach', tag: 'Dashboard' },
 ];
 
 function RoadmapNavGroup({ onNavigate }: { onNavigate?: () => void }) {
@@ -58,31 +66,31 @@ function RoadmapNavGroup({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="mt-2 pt-2 border-t border-sidebar-border/50">
-      <div className="flex items-center gap-2 px-3 py-2">
+      <Link
+        to="/roadmap"
+        onClick={onNavigate}
+        className={cn(
+          'flex items-center gap-2 px-3 py-2 rounded-lg transition-colors',
+          isRoadmapActive ? 'text-sidebar-accent-foreground' : 'hover:bg-sidebar-accent/50'
+        )}
+      >
         <Rocket className={cn('h-4 w-4', isRoadmapActive ? 'text-primary' : 'text-muted-foreground')} />
         <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Coming Soon</span>
         <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-medium text-muted-foreground ml-auto">Roadmap</Badge>
-      </div>
-      <div className="mt-1 space-y-0.5">
-        {roadmapItems.map(item => {
-          const active = location.pathname === item.to;
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              onClick={onNavigate}
-              className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ml-1',
-                active
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                  : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
-              )}
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-current opacity-40" />
-              {item.label}
-            </Link>
-          );
-        })}
+      </Link>
+      <div className="mt-1 space-y-0.5 max-h-[280px] overflow-y-auto">
+        {roadmapEnhancements.map(item => (
+          <Link
+            key={item.label}
+            to="/roadmap"
+            onClick={onNavigate}
+            className="flex items-center gap-2 rounded-lg px-3 py-1.5 ml-1 text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-all duration-150 group"
+          >
+            <span className="h-1 w-1 rounded-full bg-current opacity-30 shrink-0" />
+            <span className="text-[11px] font-medium truncate flex-1">{item.label}</span>
+            <Badge variant="outline" className="text-[8px] px-1 py-0 h-3.5 font-medium text-muted-foreground/70 shrink-0 hidden group-hover:inline-flex">{item.tag}</Badge>
+          </Link>
+        ))}
       </div>
     </div>
   );
