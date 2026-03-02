@@ -58,6 +58,7 @@ const roadmapEnhancements = [
   { slug: 'ai-hiring-stage-guidance', label: 'AI Hiring Stage Guidance', tag: 'Dashboard' },
   { slug: 'recruiter-feedback-summaries', label: 'Recruiter Feedback Summaries', tag: 'Dashboard' },
   { slug: 'ai-career-coach', label: 'AI Career Coach', tag: 'Dashboard' },
+  { slug: 'candidate-pulse-feedback', label: 'Candidate Pulse — Voice of the Candidate', tag: 'Dashboard' },
 ];
 
 function RoadmapNavGroup({ onNavigate }: { onNavigate?: () => void }) {
