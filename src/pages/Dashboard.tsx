@@ -148,8 +148,8 @@ export default function Dashboard() {
                         </span>
                       </div>
 
-                      {/* Stage timeline with status & ETA */}
-                      <div className="space-y-1.5 mb-3">
+                      {/* Horizontal stage timeline */}
+                      <div className="flex items-start gap-0 mb-3 overflow-x-auto">
                         {stageOrder.map((key, i) => {
                           const isCompleted = i < activeIdx;
                           const isActive = i === activeIdx;
@@ -157,38 +157,49 @@ export default function Dashboard() {
                           const eta = stageEntry?.etaText || '3–5 days';
 
                           return (
-                            <div key={key} className="flex items-center gap-2">
-                              {/* Progress segment */}
-                              <div className="flex-1">
-                                <div className="h-1.5 w-full rounded-full bg-border overflow-hidden">
-                                  <div
-                                    className={cn(
-                                      'h-full rounded-full transition-all duration-500',
-                                      isCompleted ? 'bg-success w-full' :
-                                      isActive ? 'bg-primary w-1/2 animate-pulse' :
-                                      'w-0'
-                                    )}
-                                  />
+                            <div key={key} className="flex items-center flex-1 min-w-0">
+                              <div className="flex flex-col items-center flex-1 gap-1">
+                                {/* Node */}
+                                <div className={cn(
+                                  'flex h-6 w-6 items-center justify-center rounded-full border-2 shrink-0 transition-all',
+                                  isCompleted ? 'bg-success border-success' :
+                                  isActive ? 'border-primary bg-primary/10' :
+                                  'border-border bg-card'
+                                )}>
+                                  {isCompleted ? (
+                                    <Check className="h-3 w-3 text-primary-foreground" />
+                                  ) : isActive ? (
+                                    <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                                  ) : (
+                                    <div className="h-1.5 w-1.5 rounded-full bg-border" />
+                                  )}
                                 </div>
+                                {/* Label */}
+                                <span className={cn(
+                                  'text-[9px] font-medium text-center leading-tight whitespace-nowrap',
+                                  isCompleted ? 'text-success' :
+                                  isActive ? 'text-primary font-semibold' :
+                                  'text-muted-foreground'
+                                )}>
+                                  {stageLabels[key]}
+                                </span>
+                                {/* Status / ETA */}
+                                <span className={cn(
+                                  'text-[8px] rounded-full px-1.5 py-0.5 font-medium',
+                                  isCompleted ? 'bg-success/15 text-success' :
+                                  isActive ? 'bg-primary/15 text-primary' :
+                                  'bg-muted text-muted-foreground'
+                                )}>
+                                  {isCompleted ? '✓ Done' : isActive ? 'Active' : eta}
+                                </span>
                               </div>
-                              {/* Label */}
-                              <span className={cn(
-                                'text-[10px] font-medium w-24 truncate',
-                                isCompleted ? 'text-success' :
-                                isActive ? 'text-primary font-semibold' :
-                                'text-muted-foreground'
-                              )}>
-                                {stageLabels[key]}
-                              </span>
-                              {/* Status badge */}
-                              <span className={cn(
-                                'text-[9px] rounded-full px-1.5 py-0.5 font-medium whitespace-nowrap',
-                                isCompleted ? 'bg-success/15 text-success' :
-                                isActive ? 'bg-primary/15 text-primary' :
-                                'bg-muted text-muted-foreground'
-                              )}>
-                                {isCompleted ? 'Done' : isActive ? 'In Progress' : `ETA: ${eta}`}
-                              </span>
+                              {/* Connector line */}
+                              {i < stageOrder.length - 1 && (
+                                <div className={cn(
+                                  'h-0.5 w-full mt-3 -mx-0.5',
+                                  isCompleted ? 'bg-success' : 'bg-border'
+                                )} />
+                              )}
                             </div>
                           );
                         })}
