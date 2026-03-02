@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Loader2, Bot, User, Sparkles } from 'lucide-react';
+import { Send, Loader2, Bot, User, Sparkles, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { callAI } from '@/lib/ai-service';
 import ReactMarkdown from 'react-markdown';
@@ -71,14 +71,26 @@ export function AICompanion({ role, company, stage, jobDescription, resumeText }
   return (
     <div className="flex flex-col h-full rounded-xl border border-border bg-card overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-2 px-5 py-3 border-b border-border bg-primary/5">
-        <div className="h-7 w-7 rounded-full bg-primary/15 flex items-center justify-center">
-          <Bot className="h-3.5 w-3.5 text-primary" />
+      <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-primary/5">
+        <div className="flex items-center gap-2">
+          <div className="h-7 w-7 rounded-full bg-primary/15 flex items-center justify-center">
+            <Bot className="h-3.5 w-3.5 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">AI Companion</p>
+            <p className="text-[10px] text-muted-foreground">{role} · {company}</p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm font-semibold text-foreground">AI Companion</p>
-          <p className="text-[10px] text-muted-foreground">{role} · {company}</p>
-        </div>
+        {messages.length > 0 && (
+          <button
+            onClick={() => setMessages([])}
+            className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+            title="New chat"
+          >
+            <Plus className="h-3 w-3" />
+            New Chat
+          </button>
+        )}
       </div>
 
       {/* Messages */}
