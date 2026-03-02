@@ -183,15 +183,20 @@ Resume: ${payload.resumeText || 'Not provided'}
 
 The candidate asks: "${payload.userQuestion || ''}"
 
-Provide a helpful, concise answer (3-5 sentences) that is specific to their role and stage. Be encouraging but honest.
+Provide a helpful, specific answer grounded in their role and stage. Format your answer using rich markdown:
+- Use **bold** for key terms and emphasis
+- Use bullet points (- ) or numbered lists for steps, tips, or multiple items
+- Use headings (### ) to separate sections if the answer covers multiple topics
+- Keep it concise but well-structured (4-8 sentences worth of content)
+- Be encouraging but honest
 
 Return a JSON object:
 {
-  "answer": "Your concise helpful answer",
+  "answer": "Your markdown-formatted answer here",
   "followUpSuggestions": ["follow-up question 1", "follow-up question 2"]
 }
 
-Return ONLY valid JSON, no markdown.`;
+Return ONLY valid JSON. The "answer" field should contain markdown formatting.`;
 
     default:
       return `Return: {"error": "Unknown task: ${task}"}`;
