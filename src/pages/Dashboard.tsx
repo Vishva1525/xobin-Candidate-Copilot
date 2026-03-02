@@ -148,19 +148,47 @@ export default function Dashboard() {
                         </span>
                       </div>
 
-                      {/* Compact timeline */}
-                      <div className="flex items-center gap-0.5 mb-3">
+                      {/* Stage timeline with status & ETA */}
+                      <div className="space-y-1.5 mb-3">
                         {stageOrder.map((key, i) => {
                           const isCompleted = i < activeIdx;
                           const isActive = i === activeIdx;
+                          const stageEntry = app.stageTimeline?.find(s => s.key === key);
+                          const eta = stageEntry?.etaText || '3–5 days';
+
                           return (
-                            <div key={key} className="flex items-center flex-1">
-                              <div className={cn(
-                                'h-1.5 flex-1 rounded-full transition-all',
-                                isCompleted ? 'bg-success' :
-                                isActive ? 'bg-primary' :
-                                'bg-border'
-                              )} />
+                            <div key={key} className="flex items-center gap-2">
+                              {/* Progress segment */}
+                              <div className="flex-1">
+                                <div className="h-1.5 w-full rounded-full bg-border overflow-hidden">
+                                  <div
+                                    className={cn(
+                                      'h-full rounded-full transition-all duration-500',
+                                      isCompleted ? 'bg-success w-full' :
+                                      isActive ? 'bg-primary w-1/2 animate-pulse' :
+                                      'w-0'
+                                    )}
+                                  />
+                                </div>
+                              </div>
+                              {/* Label */}
+                              <span className={cn(
+                                'text-[10px] font-medium w-24 truncate',
+                                isCompleted ? 'text-success' :
+                                isActive ? 'text-primary font-semibold' :
+                                'text-muted-foreground'
+                              )}>
+                                {stageLabels[key]}
+                              </span>
+                              {/* Status badge */}
+                              <span className={cn(
+                                'text-[9px] rounded-full px-1.5 py-0.5 font-medium whitespace-nowrap',
+                                isCompleted ? 'bg-success/15 text-success' :
+                                isActive ? 'bg-primary/15 text-primary' :
+                                'bg-muted text-muted-foreground'
+                              )}>
+                                {isCompleted ? 'Done' : isActive ? 'In Progress' : `ETA: ${eta}`}
+                              </span>
                             </div>
                           );
                         })}
