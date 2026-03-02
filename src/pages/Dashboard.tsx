@@ -12,7 +12,8 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   Briefcase, FileText, Brain, MessageSquare, Clock, User, Activity, Shield,
-  Check, Zap, ArrowRight, Loader2, Sparkles, HelpCircle, Compass, X
+  Check, Zap, ArrowRight, Loader2, Sparkles, HelpCircle, Compass, X,
+  Bot, PanelRightClose, PanelRightOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -59,6 +60,7 @@ export default function Dashboard() {
   const [email] = useLocalStorage<string | null>('candidateos_email', null);
   const [resumeText] = useLocalStorage<string>('candidateos_resume', '');
   const [contactOpen, setContactOpen] = useState(false);
+  const [companionOpen, setCompanionOpen] = useLocalStorage('candidateos_companion_open', true);
   const [exploreOpen, setExploreOpen] = useState(false);
   const [insights, setInsights] = useState<DashboardInsights | null>(null);
   const [loadingInsights, setLoadingInsights] = useState(false);
@@ -92,12 +94,12 @@ export default function Dashboard() {
     <Layout>
       <div className="flex h-full">
         {/* Main content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 transition-all duration-300">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="max-w-3xl"
+            className="max-w-4xl mx-auto"
           >
             {/* Exploration Context Banner */}
             {isExploring && (
@@ -370,8 +372,32 @@ export default function Dashboard() {
           </motion.div>
         </div>
 
+        {/* AI Companion toggle button (visible when collapsed on lg+) */}
+        {!companionOpen && (
+          <button
+            onClick={() => setCompanionOpen(true)}
+            className="hidden lg:flex fixed right-4 bottom-4 z-30 h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:brightness-110 transition-all"
+            title="Open AI Companion"
+          >
+            <Bot className="h-5 w-5" />
+          </button>
+        )}
+
         {/* Right panel — AI Companion */}
-        <div className="hidden lg:flex lg:flex-col w-80 border-l border-border bg-card/30">
+        <div className={cn(
+          'hidden border-l border-border bg-card/30 transition-all duration-300 ease-in-out',
+          companionOpen ? 'lg:flex lg:flex-col w-80' : 'lg:hidden'
+        )}>
+          <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">AI Companion</span>
+            <button
+              onClick={() => setCompanionOpen(false)}
+              className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              title="Collapse panel"
+            >
+              <PanelRightClose className="h-3.5 w-3.5" />
+            </button>
+          </div>
           <AICompanion
             role={activeRole.roleTitle}
             company={activeRole.company}
