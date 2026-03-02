@@ -21,7 +21,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
       {/* Brand */}
-      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-sidebar-border">
+      <Link to="/dashboard" className="flex items-center gap-2.5 px-6 py-5 border-b border-sidebar-border hover:bg-muted/50 transition-colors">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden">
           <img src={xobinLogo} alt="xobin" className="h-8 w-8 object-contain" />
         </div>
@@ -29,7 +29,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <span className="text-base font-semibold text-foreground tracking-tight">xobin</span>
           <p className="text-[10px] text-muted-foreground leading-none">Candidate Copilot</p>
         </div>
-      </div>
+      </Link>
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1">
