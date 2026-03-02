@@ -21,7 +21,7 @@ export function Layout({ children }: LayoutProps) {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <span className="text-sm font-semibold text-foreground">xobin CoPilot</span>
+          <span className="text-sm font-semibold text-foreground">xobin Candidate Copilot</span>
         </div>
         {children}
       </main>

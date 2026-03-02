@@ -27,7 +27,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </div>
         <div>
           <span className="text-base font-semibold text-foreground tracking-tight">xobin</span>
-          <p className="text-[10px] text-muted-foreground leading-none">Candidate Portal</p>
+          <p className="text-[10px] text-muted-foreground leading-none">Candidate Copilot</p>
         </div>
       </div>
 

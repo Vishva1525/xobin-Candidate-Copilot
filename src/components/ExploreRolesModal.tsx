@@ -123,7 +123,7 @@ export function ExploreRolesModal({ open, onClose }: Props) {
                     'Applying creates a new application on your dashboard.',
                     'Each application tracks its own stage and progress.',
                     'You can tailor your resume per role in Resume Lab.',
-                    'AI Copilot context switches when you select an application.',
+                    'AI Candidate Copilot context switches when you select an application.',
                   ].map((rule, i) => (
                     <p key={i} className="text-[11px] text-muted-foreground flex gap-1.5">
                       <span className="text-primary font-bold">{i + 1}.</span> {rule}

@@ -256,7 +256,7 @@ function OverviewPage() {
           </Badge>
         </div>
         <p className="text-sm text-muted-foreground max-w-2xl">
-          Candidate OS is continuously evolving to improve transparency, preparation, and guidance throughout the hiring journey. Select an item from the sidebar to learn more.
+          xobin Candidate Copilot is continuously evolving to improve transparency, preparation, and guidance throughout the hiring journey. Select an item from the sidebar to learn more.
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
