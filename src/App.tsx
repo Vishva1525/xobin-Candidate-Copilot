@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import ApplicationDetail from "./pages/ApplicationDetail";
 import ResumeLab from "./pages/ResumeLab";
 import PrepStudio from "./pages/PrepStudio";
+import RoadmapPage from "./pages/RoadmapPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,8 @@ const App = () => (
             <Route path="/application/:id" element={<ProtectedRoute><ApplicationDetail /></ProtectedRoute>} />
             <Route path="/resume-lab" element={<ProtectedRoute><ResumeLab /></ProtectedRoute>} />
             <Route path="/prep-studio" element={<ProtectedRoute><PrepStudio /></ProtectedRoute>} />
+            <Route path="/roadmap/:pillar" element={<ProtectedRoute><RoadmapPage /></ProtectedRoute>} />
+            <Route path="/roadmap" element={<Navigate to="/roadmap/prep-studio" replace />} />
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

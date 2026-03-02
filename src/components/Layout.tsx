@@ -1,5 +1,4 @@
 import { ReactNode, useState } from 'react';
-import { Sidebar } from './Sidebar';
 import { Menu } from 'lucide-react';
 
 interface LayoutProps {
@@ -32,8 +31,9 @@ export function Layout({ children }: LayoutProps) {
 
 // Inline mobile sidebar wrapper that receives open state from Layout
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, LayoutDashboard, FileText, Brain, LogOut, Sun, Moon } from 'lucide-react';
+import { X, LayoutDashboard, FileText, Brain, LogOut, Sun, Moon, Rocket, ChevronDown, ChevronRight } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
 import { cn } from '@/lib/utils';
@@ -45,6 +45,59 @@ const navItems = [
   { to: '/resume-lab', label: 'Resume Lab', icon: FileText },
   { to: '/prep-studio', label: 'Prep Studio', icon: Brain },
 ];
+
+const roadmapItems = [
+  { to: '/roadmap/prep-studio', label: 'Prep Studio Roadmap' },
+  { to: '/roadmap/resume-lab', label: 'Resume Lab Roadmap' },
+  { to: '/roadmap/dashboard', label: 'Dashboard Roadmap' },
+];
+
+function RoadmapNavGroup({ onNavigate }: { onNavigate?: () => void }) {
+  const location = useLocation();
+  const isRoadmapActive = location.pathname.startsWith('/roadmap');
+  const [expanded, setExpanded] = useState(isRoadmapActive);
+
+  return (
+    <div className="mt-2 pt-2 border-t border-sidebar-border/50">
+      <button
+        onClick={() => setExpanded(v => !v)}
+        className={cn(
+          'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150',
+          isRoadmapActive
+            ? 'text-sidebar-accent-foreground'
+            : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+        )}
+      >
+        <Rocket className={cn('h-4 w-4', isRoadmapActive && 'text-primary')} />
+        <span className="flex-1 text-left">Coming Soon</span>
+        <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-medium text-muted-foreground">Roadmap</Badge>
+        {expanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+      </button>
+      {expanded && (
+        <div className="ml-4 pl-3 border-l border-sidebar-border/50 mt-1 space-y-0.5">
+          {roadmapItems.map(item => {
+            const active = location.pathname === item.to;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={onNavigate}
+                className={cn(
+                  'block rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150',
+                  active
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                )}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function MobileSidebar({ open, setOpen }: { open: boolean; setOpen: (v: boolean) => void }) {
   const location = useLocation();
@@ -66,7 +119,7 @@ function MobileSidebar({ open, setOpen }: { open: boolean; setOpen: (v: boolean)
             <p className="text-[10px] text-muted-foreground leading-none">Candidate Portal</p>
           </div>
         </div>
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
           {navItems.map(item => {
             const active = location.pathname.startsWith(item.to);
             return (
@@ -79,6 +132,7 @@ function MobileSidebar({ open, setOpen }: { open: boolean; setOpen: (v: boolean)
               </Link>
             );
           })}
+          <RoadmapNavGroup />
         </nav>
         <div className="border-t border-sidebar-border px-4 py-4 space-y-3">
           <button onClick={toggleTheme} className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors">
@@ -119,7 +173,7 @@ function MobileSidebar({ open, setOpen }: { open: boolean; setOpen: (v: boolean)
                   <p className="text-[10px] text-muted-foreground leading-none">Candidate Portal</p>
                 </div>
               </div>
-              <nav className="flex-1 px-3 py-4 space-y-1">
+              <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
                 {navItems.map(item => {
                   const active = location.pathname.startsWith(item.to);
                   return (
@@ -132,6 +186,7 @@ function MobileSidebar({ open, setOpen }: { open: boolean; setOpen: (v: boolean)
                     </Link>
                   );
                 })}
+                <RoadmapNavGroup onNavigate={() => setOpen(false)} />
               </nav>
               <div className="border-t border-sidebar-border px-4 py-4 space-y-3">
                 <button onClick={toggleTheme} className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors">
