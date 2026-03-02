@@ -72,7 +72,7 @@ export const xobinApplication: Application = {
   stageTimeline: generateStageTimeline('assessment'),
   lastActivityAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
   typicalResponseDays: 5,
-  handlerRole: 'Recruiting Coordinator',
+  handlerRole: 'Ananya Benny',
   jobDescription: `About the Role
 We're looking for a Software Development Engineer to join our engineering team at xobin. You'll build and enhance our AI-powered talent assessment platform used by 800+ companies worldwide.
 

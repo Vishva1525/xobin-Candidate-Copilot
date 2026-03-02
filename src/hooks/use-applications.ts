@@ -66,7 +66,7 @@ function localAppToApplication(la: LocalApplication, role?: XobinRole): Applicat
     stageTimeline: generateStageTimeline(la.stage),
     lastActivityAt: la.updatedAt,
     typicalResponseDays: 5,
-    handlerRole: 'Recruiting Coordinator',
+    handlerRole: 'Ananya Benny',
     jobDescription: role?.jdFull || '',
     deadlines: [],
     messages: [],
