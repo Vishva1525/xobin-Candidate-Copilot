@@ -218,6 +218,25 @@ const allEnhancements: Enhancement[] = [
       whyItMatters: 'Career planning is complex and most people navigate it without guidance. AI Career Coach democratizes access to strategic career advice that was previously only available through expensive coaching or fortunate mentorship.',
     },
   },
+  {
+    slug: 'candidate-pulse-feedback',
+    title: 'Candidate Pulse — Voice of the Candidate',
+    description: 'Capture real-time candidate sentiment to measure hiring experience quality and continuously improve it.',
+    tag: 'Dashboard',
+    detail: {
+      overview: 'Candidate Pulse transforms the hiring process into a two-way conversation. At key moments throughout the journey — after applying, completing assessments, finishing interviews, and receiving outcomes — candidates are prompted with micro-surveys and sentiment checks. This creates a continuous feedback loop that surfaces what\'s working, what\'s frustrating, and where the experience breaks down.',
+      keyCapabilities: [
+        'Stage-Triggered Micro-Surveys — Short, contextual feedback prompts after each hiring stage (2-3 questions max)',
+        'Sentiment Tracking Dashboard — Real-time visualization of candidate satisfaction across the entire pipeline',
+        'NPS & CSAT Scoring — Industry-standard Net Promoter Score and Candidate Satisfaction metrics per role and stage',
+        'Pain Point Detection — AI identifies recurring friction points and ranks them by severity and frequency',
+        'Anonymized Trend Reports — Aggregated insights that protect candidate identity while revealing systemic issues',
+        'Actionable Recommendations — AI-generated suggestions for improving stages with the lowest satisfaction scores',
+      ],
+      howItWorks: 'As candidates transition between hiring stages, the system triggers lightweight, non-intrusive feedback moments — a quick emoji reaction, a 1-5 star rating, or a one-sentence open-ended prompt. Responses are aggregated in real-time, analyzed by AI for patterns and sentiment, and surfaced as actionable dashboards for the recruiting team. Over time, the system builds a "Candidate Experience Index" that benchmarks the hiring process against industry standards.',
+      whyItMatters: 'Companies spend millions on employer branding but rarely measure the actual candidate experience. 60% of candidates who have a negative experience share it publicly. Candidate Pulse closes the feedback gap — giving recruiters the data they need to fix broken processes, celebrate what works, and build a hiring experience that candidates genuinely recommend.',
+    },
+  },
 ];
 
 function OverviewPage() {
