@@ -36,6 +36,7 @@ const App = () => (
             <Route path="/application/:id" element={<ProtectedRoute><ApplicationDetail /></ProtectedRoute>} />
             <Route path="/resume-lab" element={<ProtectedRoute><ResumeLab /></ProtectedRoute>} />
             <Route path="/prep-studio" element={<ProtectedRoute><PrepStudio /></ProtectedRoute>} />
+            <Route path="/roadmap/:slug" element={<ProtectedRoute><RoadmapPage /></ProtectedRoute>} />
             <Route path="/roadmap" element={<ProtectedRoute><RoadmapPage /></ProtectedRoute>} />
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<NotFound />} />

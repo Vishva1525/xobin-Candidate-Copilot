@@ -47,17 +47,17 @@ const navItems = [
 ];
 
 const roadmapEnhancements = [
-  { label: 'AI Interview Replay Analytics', tag: 'Prep Studio' },
-  { label: 'Role-Specific Interview Simulations', tag: 'Prep Studio' },
-  { label: 'Interview Readiness Score', tag: 'Prep Studio' },
-  { label: 'Advanced Resume ATS Scoring', tag: 'Resume Lab' },
-  { label: 'Resume Version Management', tag: 'Resume Lab' },
-  { label: 'Skill Gap Intelligence', tag: 'Resume Lab' },
-  { label: 'Application Activity Insights', tag: 'Dashboard' },
-  { label: 'Application Health Score', tag: 'Dashboard' },
-  { label: 'AI Hiring Stage Guidance', tag: 'Dashboard' },
-  { label: 'Recruiter Feedback Summaries', tag: 'Dashboard' },
-  { label: 'AI Career Coach', tag: 'Dashboard' },
+  { slug: 'ai-interview-replay-analytics', label: 'AI Interview Replay Analytics', tag: 'Prep Studio' },
+  { slug: 'role-specific-interview-simulations', label: 'Role-Specific Interview Simulations', tag: 'Prep Studio' },
+  { slug: 'interview-readiness-score', label: 'Interview Readiness Score', tag: 'Prep Studio' },
+  { slug: 'advanced-resume-ats-scoring', label: 'Advanced Resume ATS Scoring', tag: 'Resume Lab' },
+  { slug: 'resume-version-management', label: 'Resume Version Management', tag: 'Resume Lab' },
+  { slug: 'skill-gap-intelligence', label: 'Skill Gap Intelligence', tag: 'Resume Lab' },
+  { slug: 'application-activity-insights', label: 'Application Activity Insights', tag: 'Dashboard' },
+  { slug: 'application-health-score', label: 'Application Health Score', tag: 'Dashboard' },
+  { slug: 'ai-hiring-stage-guidance', label: 'AI Hiring Stage Guidance', tag: 'Dashboard' },
+  { slug: 'recruiter-feedback-summaries', label: 'Recruiter Feedback Summaries', tag: 'Dashboard' },
+  { slug: 'ai-career-coach', label: 'AI Career Coach', tag: 'Dashboard' },
 ];
 
 function RoadmapNavGroup({ onNavigate }: { onNavigate?: () => void }) {
@@ -79,18 +79,26 @@ function RoadmapNavGroup({ onNavigate }: { onNavigate?: () => void }) {
         <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-medium text-muted-foreground ml-auto">Roadmap</Badge>
       </Link>
       <div className="mt-1 space-y-0.5 max-h-[280px] overflow-y-auto">
-        {roadmapEnhancements.map(item => (
-          <Link
-            key={item.label}
-            to="/roadmap"
-            onClick={onNavigate}
-            className="flex items-center gap-2 rounded-lg px-3 py-1.5 ml-1 text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-all duration-150 group"
-          >
-            <span className="h-1 w-1 rounded-full bg-current opacity-30 shrink-0" />
-            <span className="text-[11px] font-medium truncate flex-1">{item.label}</span>
-            <Badge variant="outline" className="text-[8px] px-1 py-0 h-3.5 font-medium text-muted-foreground/70 shrink-0 hidden group-hover:inline-flex">{item.tag}</Badge>
-          </Link>
-        ))}
+        {roadmapEnhancements.map(item => {
+          const active = location.pathname === `/roadmap/${item.slug}`;
+          return (
+            <Link
+              key={item.slug}
+              to={`/roadmap/${item.slug}`}
+              onClick={onNavigate}
+              className={cn(
+                'flex items-center gap-2 rounded-lg px-3 py-1.5 ml-1 transition-all duration-150 group',
+                active
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                  : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+              )}
+            >
+              <span className="h-1 w-1 rounded-full bg-current opacity-30 shrink-0" />
+              <span className="text-[11px] font-medium truncate flex-1">{item.label}</span>
+              <Badge variant="outline" className="text-[8px] px-1 py-0 h-3.5 font-medium text-muted-foreground/70 shrink-0 hidden group-hover:inline-flex">{item.tag}</Badge>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
