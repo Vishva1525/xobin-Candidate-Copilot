@@ -145,7 +145,7 @@ export default function Login() {
             You are the pilot.
             <br />
             We're your{' '}
-            <span className="text-gradient">CoPilot.</span>
+            <span className="text-gradient">Candidate Copilot.</span>
           </motion.h1>
           <motion.p variants={item} className="mt-5 text-base text-muted-foreground leading-relaxed max-w-md">
             Your AI-powered companion for the entire hiring journey — from application tracking to interview prep. We navigate together.
@@ -208,7 +208,7 @@ export default function Login() {
                 style={{ fontFamily: "'Space Grotesk', sans-serif" }}
               >
                 xobin{' '}
-                <span className="text-gradient">CoPilot</span>
+                <span className="text-gradient">Candidate Copilot</span>
               </h2>
               <p className="text-xs text-muted-foreground mt-1.5">Sign in to your candidate dashboard</p>
             </motion.div>
@@ -283,7 +283,7 @@ export default function Login() {
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
-                      Sign in to CoPilot
+                      Sign in to Candidate Copilot
                       <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
                     </>
                   )}
