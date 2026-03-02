@@ -88,17 +88,17 @@ export function TimelineStepper({ steps, size = 'sm' }: TimelineStepperProps) {
               {step.label}
             </p>
 
-            {/* Status */}
+            {/* Status badge */}
             <span className={cn(
-              'whitespace-nowrap mt-0.5',
+              'whitespace-nowrap mt-1 rounded-full px-2 py-0.5',
               isLarge ? 'text-[10px]' : 'text-[9px]',
               step.completed
-                ? 'text-success font-medium'
+                ? 'bg-success/15 text-success font-medium'
                 : step.current
-                ? cn(stageTextMap[step.stage], 'font-medium')
-                : 'text-muted-foreground'
+                ? cn('font-medium', `bg-${step.stage === 'assessment' ? 'stage-assessment' : step.stage === 'ai-interview' ? 'stage-interview' : step.stage === 'recruiter-screen' ? 'stage-screen' : step.stage === 'offer' ? 'stage-offer' : 'primary'}/15`, stageTextMap[step.stage])
+                : 'bg-muted text-muted-foreground'
             )}>
-              {step.completed ? '✓ Done' : step.current ? 'Active' : step.date || ''}
+              {step.completed ? '✓ Done' : step.current ? 'Active' : step.date || '—'}
             </span>
           </div>
         ))}
