@@ -29,14 +29,17 @@ export function TimelineStepper({ steps, size = 'sm' }: TimelineStepperProps) {
   const isLarge = size === 'lg';
 
   return (
-    <div className="flex items-center gap-0 w-full">
+    <div className="flex items-start w-full">
       {steps.map((step, i) => (
-        <div key={step.stage} className="flex items-center flex-1 last:flex-none">
-          {/* Step node */}
-          <div className="flex flex-col items-center gap-1.5">
+        <div key={step.stage} className="flex flex-col items-center flex-1 last:flex-none relative">
+          {/* Icon row: icon + connector */}
+          <div className="flex items-center w-full">
+            {/* Left spacer */}
+            <div className={cn(i === 0 ? '' : 'flex-1')} />
+            {/* Icon */}
             <div
               className={cn(
-                'flex items-center justify-center rounded-full border-2 transition-all duration-300',
+                'flex items-center justify-center rounded-full border-2 transition-all duration-300 shrink-0',
                 isLarge ? 'h-9 w-9' : 'h-6 w-6',
                 step.completed
                   ? cn(stageColorMap[step.stage], 'border-transparent')
@@ -52,28 +55,30 @@ export function TimelineStepper({ steps, size = 'sm' }: TimelineStepperProps) {
                 <div className={cn('rounded-full', stageColorMap[step.stage], isLarge ? 'h-3 w-3' : 'h-2 w-2')} />
               )}
             </div>
-            <div className="text-center">
-              <p className={cn(
-                'font-medium whitespace-nowrap',
-                isLarge ? 'text-xs' : 'text-[10px]',
-                step.current ? stageTextMap[step.stage] : step.completed ? 'text-foreground' : 'text-muted-foreground'
-              )}>
-                {step.label}
-              </p>
-              {step.date && isLarge && (
-                <p className="text-[10px] text-muted-foreground mt-0.5">{step.date}</p>
-              )}
-            </div>
+            {/* Right connector or spacer */}
+            {i < steps.length - 1 ? (
+              <div className={cn(
+                'flex-1',
+                isLarge ? 'h-0.5' : 'h-px',
+                step.completed ? stageColorMap[step.stage] : 'bg-border'
+              )} />
+            ) : (
+              <div />
+            )}
           </div>
-
-          {/* Connector */}
-          {i < steps.length - 1 && (
-            <div className={cn(
-              'flex-1 mx-1.5',
-              isLarge ? 'h-0.5' : 'h-px',
-              step.completed ? stageColorMap[step.stage] : 'bg-border'
-            )} />
-          )}
+          {/* Label centered under icon */}
+          <div className="text-center mt-1.5">
+            <p className={cn(
+              'font-medium whitespace-nowrap',
+              isLarge ? 'text-xs' : 'text-[10px]',
+              step.current ? stageTextMap[step.stage] : step.completed ? 'text-foreground' : 'text-muted-foreground'
+            )}>
+              {step.label}
+            </p>
+            {step.date && isLarge && (
+              <p className="text-[10px] text-muted-foreground mt-0.5">{step.date}</p>
+            )}
+          </div>
         </div>
       ))}
     </div>
