@@ -79,7 +79,7 @@ function RoadmapNavGroup({ onNavigate }: { onNavigate?: () => void }) {
         <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Coming Soon</span>
         <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-medium text-muted-foreground ml-auto">Roadmap</Badge>
       </Link>
-      <div className="mt-1 space-y-0.5 max-h-[280px] overflow-y-auto">
+      <div className="mt-1 space-y-0.5 max-h-[360px] overflow-y-auto">
         {roadmapEnhancements.map(item => {
           const active = location.pathname === `/roadmap/${item.slug}`;
           return (
